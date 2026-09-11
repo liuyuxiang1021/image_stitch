@@ -1,0 +1,72 @@
+{
+  "source": "examples/input/left.png",
+  "destination": "examples/input/right.png",
+  "mode": "direct_point_line",
+  "homography_source_to_destination": [
+    [
+      1.0123927761575535,
+      -0.0006069053107947007,
+      -485.8716646401938
+    ],
+    [
+      0.004672375668479084,
+      1.0072746190123654,
+      -2.0326109727998207
+    ],
+    [
+      2.1582202661694712e-05,
+      -8.311431662481456e-06,
+      1.0
+    ]
+  ],
+  "source_to_canvas": [
+    [
+      1.0229464732591222,
+      -0.004671195393748133,
+      3.128335359806215
+    ],
+    [
+      0.004737122276464168,
+      1.007249684717378,
+      0.9673890272001793
+    ],
+    [
+      2.1582202661694712e-05,
+      -8.311431662481456e-06,
+      1.0
+    ]
+  ],
+  "destination_to_canvas": [
+    [
+      1.0,
+      0.0,
+      489.0
+    ],
+    [
+      0.0,
+      1.0,
+      3.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "panorama_size": [
+    1209,
+    487
+  ],
+  "matching": {
+    "omniglue_confidence_threshold": 0.1,
+    "points_before_filter": 213,
+    "points_after_filter": 213,
+    "lines_before_filter": 21,
+    "lines_after_filter": 15,
+    "point_rmse": 0.8534952998161316,
+    "line_rmse": 0.28359806537628174,
+    "optimization_iterations": 4,
+    "point_weight": 0.5,
+    "line_weight": 0.5
+  }
+}

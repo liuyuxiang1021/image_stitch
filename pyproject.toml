@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "image-stitch-point-line"
+version = "0.1.0"
+description = "Image stitching with OmniGlue points, LineTR lines, and robust homography optimization"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy>=1.24",
+  "opencv-contrib-python>=4.8",
+]
+
+[project.optional-dependencies]
+full = [
+  "einops>=0.6",
+  "gdown>=4.7",
+  "matplotlib>=3.7",
+  "Pillow>=9",
+  "tensorflow>=2.12",
+  "torch>=1.13",
+]
+dev = ["pytest>=7"]
+
+[project.scripts]
+image-stitch = "image_stitch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

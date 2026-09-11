@@ -1,0 +1,6 @@
+[submodule "third_party/LineTR"]
+	path = third_party/LineTR
+	url = https://github.com/yosungho/LineTR.git
+[submodule "third_party/omniglue"]
+	path = third_party/omniglue
+	url = https://github.com/google-research/omniglue.git
