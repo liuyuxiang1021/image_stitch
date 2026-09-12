@@ -67,9 +67,13 @@ H_final = H_delta @ H_init
 | --- | --- |
 | ![运动场 local](examples/20201024084037322_cam11/input/local.jpg) | ![运动场 global](examples/20201024084037322_cam11/input/global.jpg) |
 
-| 初值定位及局部放大 | 最终融合输出 |
-| --- | --- |
-| ![运动场 initial alignment](examples/20201024084037322_cam11/output/initial_alignment.jpg) | ![运动场 panorama](examples/20201024084037322_cam11/output/panorama.jpg) |
+#### 初值定位及局部放大
+
+![运动场 initial alignment](examples/20201024084037322_cam11/output/initial_alignment.jpg)
+
+#### 最终融合输出
+
+![运动场 panorama](examples/20201024084037322_cam11/output/panorama.jpg)
 
 ![运动场点线匹配](examples/20201024084037322_cam11/output/point_line_matches.jpg)
 
@@ -81,9 +85,13 @@ H_final = H_delta @ H_init
 | --- | --- |
 | ![展厅 local](examples/20210313151132256_cam22/input/local.jpg) | ![展厅 global](examples/20210313151132256_cam22/input/global.jpg) |
 
-| 初值定位及局部放大 | 最终融合输出 |
-| --- | --- |
-| ![展厅 initial alignment](examples/20210313151132256_cam22/output/initial_alignment.jpg) | ![展厅 panorama](examples/20210313151132256_cam22/output/panorama.jpg) |
+#### 初值定位及局部放大
+
+![展厅 initial alignment](examples/20210313151132256_cam22/output/initial_alignment.jpg)
+
+#### 最终融合输出
+
+![展厅 panorama](examples/20210313151132256_cam22/output/panorama.jpg)
 
 ![展厅点线匹配](examples/20210313151132256_cam22/output/point_line_matches.jpg)
 
@@ -95,9 +103,13 @@ H_final = H_delta @ H_init
 | --- | --- |
 | ![道路 local](examples/20220817171240976_cam35/input/local.jpg) | ![道路 global](examples/20220817171240976_cam35/input/global.jpg) |
 
-| 初值定位及局部放大 | 最终融合输出 |
-| --- | --- |
-| ![道路 initial alignment](examples/20220817171240976_cam35/output/initial_alignment.jpg) | ![道路 panorama](examples/20220817171240976_cam35/output/panorama.jpg) |
+#### 初值定位及局部放大
+
+![道路 initial alignment](examples/20220817171240976_cam35/output/initial_alignment.jpg)
+
+#### 最终融合输出
+
+![道路 panorama](examples/20220817171240976_cam35/output/panorama.jpg)
 
 ![道路点线匹配](examples/20220817171240976_cam35/output/point_line_matches.jpg)
 
