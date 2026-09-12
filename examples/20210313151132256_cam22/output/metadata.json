@@ -57,6 +57,11 @@
     3840,
     2160
   ],
+  "blending": {
+    "mode": "local_edge_feather",
+    "feather_width_pixels": 32.0,
+    "feather_power": 1.0
+  },
   "matching": {
     "omniglue_confidence_threshold": 0.1,
     "points_before_filter": 630,

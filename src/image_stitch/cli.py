@@ -39,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ransac-threshold", type=float, default=4.0)
     parser.add_argument("--line-distance-threshold", type=float, default=12.0)
     parser.add_argument("--line-angle-threshold", type=float, default=15.0)
+    parser.add_argument("--feather-width", type=float, default=32.0)
     parser.add_argument("--feather-power", type=float, default=1.0)
     return parser
 
@@ -61,6 +62,11 @@ def _metadata(result, args) -> dict:
         "source_to_canvas": result.source_to_canvas.tolist(),
         "destination_to_canvas": result.destination_to_canvas.tolist(),
         "panorama_size": [result.panorama.shape[1], result.panorama.shape[0]],
+        "blending": {
+            "mode": "local_edge_feather",
+            "feather_width_pixels": args.feather_width,
+            "feather_power": args.feather_power,
+        },
         "matching": {
             "omniglue_confidence_threshold": args.confidence,
             "points_before_filter": diagnostics.points_before_filter,
@@ -103,6 +109,7 @@ def main(argv=None) -> int:
         result = stitch_pair(
             source, destination, point_matcher, line_matcher,
             initial_homography=initial_h,
+            feather_width=args.feather_width,
             feather_power=args.feather_power,
             max_match_width=args.max_match_width,
             point_weight=args.point_weight,

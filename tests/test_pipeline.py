@@ -6,6 +6,7 @@ import cv2 as cv
 import numpy as np
 
 from image_stitch import load_homography, refine_homography, stitch_pair
+from image_stitch.core import _local_blend_alpha
 
 
 class StaticPointMatcher:
@@ -132,6 +133,31 @@ class PipelineTests(unittest.TestCase):
             np.savez(path, H=expected)
             actual = load_homography(path)
         np.testing.assert_array_equal(actual, expected)
+
+    def test_feathering_is_limited_to_local_image_boundary(self):
+        source_mask = np.zeros((80, 80), dtype=np.uint8)
+        source_mask[10:70, 10:70] = 255
+        destination_mask = np.full((80, 80), 255, dtype=np.uint8)
+        alpha = _local_blend_alpha(
+            source_mask,
+            destination_mask,
+            feather_width=10,
+            feather_power=1.0,
+        )
+        self.assertEqual(alpha[0, 0], 0.0)
+        self.assertGreater(alpha[10, 40], 0.0)
+        self.assertLess(alpha[10, 40], 0.2)
+        self.assertGreater(alpha[15, 40], alpha[10, 40])
+        self.assertEqual(alpha[30, 30], 1.0)
+
+        no_destination = np.zeros_like(destination_mask)
+        source_only_alpha = _local_blend_alpha(
+            source_mask,
+            no_destination,
+            feather_width=10,
+            feather_power=1.0,
+        )
+        self.assertEqual(source_only_alpha[10, 40], 1.0)
 
 
 if __name__ == "__main__":

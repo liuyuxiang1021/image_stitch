@@ -159,13 +159,30 @@ def _corners(image: np.ndarray) -> np.ndarray:
     return np.float32([[0, 0], [width, 0], [width, height], [0, height]]).reshape(-1, 1, 2)
 
 
-def _weights(mask: np.ndarray, feather_power: float) -> np.ndarray:
-    padded = cv.copyMakeBorder(mask, 1, 1, 1, 1, cv.BORDER_CONSTANT, value=0)
+def _local_blend_alpha(
+    source_mask: np.ndarray,
+    destination_mask: np.ndarray,
+    feather_width: float,
+    feather_power: float,
+) -> np.ndarray:
+    """Blend local over global, feathering only inside the local boundary."""
+    if feather_width < 0:
+        raise ValueError("feather_width must be non-negative")
+    if feather_power <= 0:
+        raise ValueError("feather_power must be positive")
+    padded = cv.copyMakeBorder(
+        source_mask, 1, 1, 1, 1, cv.BORDER_CONSTANT, value=0
+    )
     distance = cv.distanceTransform(padded, cv.DIST_L2, 5)[1:-1, 1:-1]
-    output = np.zeros(mask.shape, dtype=np.float32)
-    valid = mask > 0
-    output[valid] = np.power(distance[valid] + 1.0, feather_power)
-    return output
+    source_valid = source_mask > 0
+    destination_valid = destination_mask > 0
+    alpha = np.zeros(source_mask.shape, dtype=np.float32)
+    alpha[source_valid] = 1.0
+    overlap = source_valid & destination_valid
+    if feather_width > 0:
+        ramp = np.clip(distance / feather_width, 0.0, 1.0)
+        alpha[overlap] = np.power(ramp[overlap], feather_power)
+    return alpha
 
 
 def compose_pair(
@@ -173,6 +190,7 @@ def compose_pair(
     destination: np.ndarray,
     estimation: HomographyResult,
     *,
+    feather_width: float = 32.0,
     feather_power: float = 1.0,
     max_canvas_pixels: int = 100_000_000,
 ) -> StitchResult:
@@ -196,16 +214,20 @@ def compose_pair(
     destination_mask = cv.warpPerspective(
         np.full(destination.shape[:2], 255, dtype=np.uint8), destination_transform, size, flags=cv.INTER_NEAREST
     )
-    source_weights = _weights(source_mask, feather_power)
-    destination_weights = _weights(destination_mask, feather_power)
-    weight_sum = source_weights + destination_weights
+    source_alpha = _local_blend_alpha(
+        source_mask,
+        destination_mask,
+        feather_width,
+        feather_power,
+    )
+    destination_alpha = 1.0 - source_alpha
     color_sum = (
-        warped_source.astype(np.float32) * source_weights[..., None]
-        + warped_destination.astype(np.float32) * destination_weights[..., None]
+        warped_source.astype(np.float32) * source_alpha[..., None]
+        + warped_destination.astype(np.float32) * destination_alpha[..., None]
     )
     panorama = np.zeros_like(warped_source)
-    valid = weight_sum > 0
-    panorama[valid] = np.clip(color_sum[valid] / weight_sum[valid, None], 0, 255).astype(np.uint8)
+    valid = (source_mask > 0) | (destination_mask > 0)
+    panorama[valid] = np.clip(color_sum[valid], 0, 255).astype(np.uint8)
     return StitchResult(
         panorama, source_mask, destination_mask,
         source_transform, destination_transform, estimation,
@@ -219,6 +241,7 @@ def stitch_pair(
     line_matcher,
     *,
     initial_homography: np.ndarray | None = None,
+    feather_width: float = 32.0,
     feather_power: float = 1.0,
     **estimation_options,
 ) -> StitchResult:
@@ -231,7 +254,13 @@ def stitch_pair(
             source, destination, initial_homography,
             point_matcher, line_matcher, **estimation_options
         )
-    return compose_pair(source, destination, estimation, feather_power=feather_power)
+    return compose_pair(
+        source,
+        destination,
+        estimation,
+        feather_width=feather_width,
+        feather_power=feather_power,
+    )
 
 
 def load_homography(path: str | Path) -> np.ndarray:

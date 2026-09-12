@@ -243,11 +243,6 @@ def draw_final_alignment(
     )
 
     zoom = panorama[y:y + box_height, x:x + box_width].copy()
-    zoom_mask = source_mask[y:y + box_height, x:x + box_width]
-    zoom_contours, _ = cv.findContours(
-        zoom_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
-    )
-    cv.drawContours(zoom, zoom_contours, -1, (255, 255, 0), 4, cv.LINE_AA)
 
     gap = 16
     header = 52

@@ -21,7 +21,7 @@ LineTR 线匹配 ───┘
 - 点重投影误差 + 采样点到线误差的 8 自由度联合优化；
 - Huber 鲁棒权重和点线匹配置信度权重；
 - 直接估计 `H`，或从已有 `H_init` 估计 `H_delta` 并生成 `H_final`；
-- 自动画布、有效掩膜和距离羽化融合；
+- 自动画布、有效掩膜和有限宽度的 local 边缘羽化融合；
 - 保存矩阵、匹配数量、RMSE 以及点线匹配可视化。
 
 算法和坐标变换的详细说明见 [docs/algorithm.md](docs/algorithm.md)。
@@ -60,7 +60,9 @@ H_final = H_delta @ H_init
 
 `initial_alignment.jpg` 左侧青色轮廓表示 local 经 `H_init` 投影后的实际边界，黄色矩形表示带 32 px 留白的可视化 ROI；右侧将这个 ROI 放大，并按照 local 55%、global 45% 叠加。这样既保留全局位置关系，也能直接观察初值附近的重影和对齐误差。
 
-`final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是完整最终画布，右侧是黄色框对应的最终融合像素。原始无标注大图仍保存在 `panorama.jpg`，三个样例的尺寸均为 `3840 × 2160`。
+`final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是带定位框的完整最终画布，右侧是黄色框对应的最终融合像素，并且不再叠加青色或黄色边框。原始无标注大图仍保存在 `panorama.jpg`，三个样例的尺寸均为 `3840 × 2160`。
+
+默认只在 local 投影边缘内侧 32 px 范围进行羽化：边界处由 global 平滑过渡，离开边界 32 px 后 local 权重达到 100%。可通过 `--feather-width` 调整过渡宽度；设为 `0` 表示不羽化、直接覆盖。
 
 ## 三个真实场景样例
 
@@ -187,6 +189,8 @@ image-stitch source.jpg destination.jpg \
 --ransac-threshold 4.0          点 RANSAC 阈值（匹配尺度像素）
 --line-distance-threshold 12.0  线中点到目标直线阈值
 --line-angle-threshold 15.0     线方向差阈值（度）
+--feather-width 32              local 边缘羽化宽度（输出像素），0 表示直接覆盖
+--feather-power 1.0             羽化曲线指数
 --device auto                   auto / cpu / cuda
 --gpu 0                         同时提供给 TensorFlow 与 PyTorch 的物理 GPU
 ```
