@@ -8,6 +8,19 @@ import numpy as np
 from .types import FeatureMatches
 
 
+def _mask_bounds(mask: np.ndarray, padding: int) -> tuple[int, int, int, int]:
+    coordinates = cv.findNonZero(mask)
+    if coordinates is None:
+        raise ValueError("The projected source is outside the visualization canvas")
+    x, y, box_width, box_height = cv.boundingRect(coordinates)
+    height, width = mask.shape[:2]
+    x0 = max(0, x - padding)
+    y0 = max(0, y - padding)
+    x1 = min(width, x + box_width + padding)
+    y1 = min(height, y + box_height + padding)
+    return x0, y0, x1 - x0, y1 - y0
+
+
 def projected_source_bounds(
     source: np.ndarray,
     destination: np.ndarray,
@@ -23,15 +36,7 @@ def projected_source_bounds(
         (width, height),
         flags=cv.INTER_NEAREST,
     )
-    coordinates = cv.findNonZero(mask)
-    if coordinates is None:
-        raise ValueError("The homography maps the source outside the destination")
-    x, y, box_width, box_height = cv.boundingRect(coordinates)
-    x0 = max(0, x - padding)
-    y0 = max(0, y - padding)
-    x1 = min(width, x + box_width + padding)
-    y1 = min(height, y + box_height + padding)
-    return x0, y0, x1 - x0, y1 - y0
+    return _mask_bounds(mask, padding)
 
 
 def _crop_matches(
@@ -200,6 +205,74 @@ def draw_initial_alignment(
     cv.putText(
         canvas,
         "ZOOM: H_INIT OVERLAY (LOCAL 55% + GLOBAL 45%)",
+        (panel_width + gap + 18, 35),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.72,
+        (255, 255, 255),
+        2,
+        cv.LINE_AA,
+    )
+    return canvas
+
+
+def draw_final_alignment(
+    panorama: np.ndarray,
+    source_mask: np.ndarray,
+    *,
+    panel_width: int = 960,
+    panel_height: int = 540,
+    padding: int = 32,
+) -> np.ndarray:
+    """Show the final panorama location and a magnified feather-blended ROI."""
+    if source_mask.shape[:2] != panorama.shape[:2]:
+        raise ValueError("source_mask and panorama must have the same dimensions")
+    x, y, box_width, box_height = _mask_bounds(source_mask, padding)
+
+    overview = panorama.copy()
+    contours, _ = cv.findContours(
+        source_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+    )
+    cv.drawContours(overview, contours, -1, (255, 255, 0), 10, cv.LINE_AA)
+    cv.rectangle(
+        overview,
+        (x, y),
+        (x + box_width - 1, y + box_height - 1),
+        (0, 215, 255),
+        8,
+        cv.LINE_AA,
+    )
+
+    zoom = panorama[y:y + box_height, x:x + box_width].copy()
+    zoom_mask = source_mask[y:y + box_height, x:x + box_width]
+    zoom_contours, _ = cv.findContours(
+        zoom_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+    )
+    cv.drawContours(zoom, zoom_contours, -1, (255, 255, 0), 4, cv.LINE_AA)
+
+    gap = 16
+    header = 52
+    canvas = np.full(
+        (panel_height + header, panel_width * 2 + gap, 3), 28, dtype=np.uint8
+    )
+    canvas[header:, :panel_width] = _fit_panel(
+        overview, panel_width, panel_height
+    )
+    canvas[header:, panel_width + gap:] = _fit_panel(
+        zoom, panel_width, panel_height
+    )
+    cv.putText(
+        canvas,
+        "OVERVIEW: CYAN = FINAL LOCAL FOOTPRINT",
+        (18, 35),
+        cv.FONT_HERSHEY_SIMPLEX,
+        0.72,
+        (255, 255, 255),
+        2,
+        cv.LINE_AA,
+    )
+    cv.putText(
+        canvas,
+        "ZOOM: FINAL FEATHER-BLENDED ROI",
         (panel_width + gap + 18, 35),
         cv.FONT_HERSHEY_SIMPLEX,
         0.72,

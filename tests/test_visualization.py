@@ -4,6 +4,7 @@ import numpy as np
 
 from image_stitch.types import FeatureMatches
 from image_stitch.visualization import (
+    draw_final_alignment,
     draw_initial_alignment,
     draw_matches,
     projected_source_bounds,
@@ -54,6 +55,18 @@ class VisualizationTests(unittest.TestCase):
             region=region,
         )
         self.assertEqual(visualization.shape, (100, 252, 3))
+
+    def test_final_alignment_contains_overview_and_zoom(self):
+        source_mask = np.zeros(self.destination.shape[:2], dtype=np.uint8)
+        source_mask[80:160, 120:220] = 255
+        visualization = draw_final_alignment(
+            self.destination,
+            source_mask,
+            panel_width=320,
+            panel_height=180,
+            padding=10,
+        )
+        self.assertEqual(visualization.shape, (232, 656, 3))
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from .core import load_homography, stitch_pair
 from .matchers import LineTRLineMatcher, OmniGluePointMatcher
 from .types import HomographyEstimationError
 from .visualization import (
+    draw_final_alignment,
     draw_initial_alignment,
     draw_matches,
     projected_source_bounds,
@@ -141,6 +142,20 @@ def main(argv=None) -> int:
             region=match_region,
         )
         cv.imwrite(str(args.artifacts_dir / "point_line_matches.jpg"), visualization)
+        final_alignment = draw_final_alignment(
+            result.panorama, result.source_mask, padding=32
+        )
+        cv.imwrite(
+            str(args.artifacts_dir / "final_alignment.jpg"),
+            final_alignment,
+        )
+        final_region = projected_source_bounds(
+            source,
+            result.panorama,
+            result.source_to_canvas,
+            padding=32,
+        )
+        metadata["final_projection_roi_canvas_xywh"] = list(final_region)
         (args.artifacts_dir / "metadata.json").write_text(
             json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
