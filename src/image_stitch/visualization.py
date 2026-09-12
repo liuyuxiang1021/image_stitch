@@ -133,6 +133,43 @@ def _fit_panel(image: np.ndarray, width: int, height: int) -> np.ndarray:
     return panel
 
 
+def _draw_dashed_contours(
+    image: np.ndarray,
+    contours: list[np.ndarray] | tuple[np.ndarray, ...],
+    *,
+    color: tuple[int, int, int] = (255, 255, 0),
+    thickness: int = 2,
+    dash_length: float = 14.0,
+    gap_length: float = 10.0,
+) -> None:
+    """Draw closed anti-aliased contours as short dashed segments."""
+    period = dash_length + gap_length
+    for contour in contours:
+        points = np.asarray(contour, dtype=np.float32).reshape(-1, 2)
+        if len(points) < 2:
+            continue
+        for index, start in enumerate(points):
+            end = points[(index + 1) % len(points)]
+            vector = end - start
+            length = float(np.linalg.norm(vector))
+            if length <= 0:
+                continue
+            direction = vector / length
+            offset = 0.0
+            while offset < length:
+                dash_start = start + direction * offset
+                dash_end = start + direction * min(offset + dash_length, length)
+                cv.line(
+                    image,
+                    tuple(np.rint(dash_start).astype(int)),
+                    tuple(np.rint(dash_end).astype(int)),
+                    color,
+                    thickness,
+                    cv.LINE_AA,
+                )
+                offset += period
+
+
 def draw_initial_alignment(
     source: np.ndarray,
     destination: np.ndarray,
@@ -179,7 +216,7 @@ def draw_initial_alignment(
     zoom_contours, _ = cv.findContours(
         roi_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
     )
-    cv.drawContours(zoom, zoom_contours, -1, (255, 255, 0), 4, cv.LINE_AA)
+    _draw_dashed_contours(zoom, zoom_contours)
 
     gap = 16
     header = 52
@@ -243,6 +280,11 @@ def draw_final_alignment(
     )
 
     zoom = panorama[y:y + box_height, x:x + box_width].copy()
+    zoom_mask = source_mask[y:y + box_height, x:x + box_width]
+    zoom_contours, _ = cv.findContours(
+        zoom_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+    )
+    _draw_dashed_contours(zoom, zoom_contours)
 
     gap = 16
     header = 52

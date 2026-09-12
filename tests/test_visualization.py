@@ -4,6 +4,7 @@ import numpy as np
 
 from image_stitch.types import FeatureMatches
 from image_stitch.visualization import (
+    _draw_dashed_contours,
     draw_final_alignment,
     draw_initial_alignment,
     draw_matches,
@@ -67,6 +68,14 @@ class VisualizationTests(unittest.TestCase):
             padding=10,
         )
         self.assertEqual(visualization.shape, (232, 656, 3))
+
+    def test_dashed_contour_contains_visible_gaps(self):
+        image = np.zeros((100, 100, 3), dtype=np.uint8)
+        contour = np.int32([[[10, 10]], [[90, 10]], [[90, 90]], [[10, 90]]])
+        _draw_dashed_contours(image, (contour,))
+        top_edge = np.any(image[10, 10:91] > 0, axis=1)
+        self.assertTrue(np.any(top_edge))
+        self.assertTrue(np.any(~top_edge))
 
 
 if __name__ == "__main__":
