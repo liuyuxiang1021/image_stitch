@@ -3,6 +3,7 @@
 from .core import (
     compose_pair,
     estimate_homography,
+    load_homography,
     refine_homography,
     stitch_pair,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "LineTRLineMatcher",
     "compose_pair",
     "estimate_homography",
+    "load_homography",
     "refine_homography",
     "stitch_pair",
     "estimate_point_line_homography",

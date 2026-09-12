@@ -1,9 +1,11 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import cv2 as cv
 import numpy as np
 
-from image_stitch import refine_homography, stitch_pair
+from image_stitch import load_homography, refine_homography, stitch_pair
 
 
 class StaticPointMatcher:
@@ -22,6 +24,15 @@ class StaticLineMatcher:
 
     def match(self, _source_image, _destination_image):
         return self.source, self.destination, np.ones(len(self.source), dtype=np.float32)
+
+
+class EmptyLineMatcher:
+    def match(self, _source_image, _destination_image):
+        return (
+            np.empty((0, 2, 2), dtype=np.float32),
+            np.empty((0, 2, 2), dtype=np.float32),
+            np.empty(0, dtype=np.float32),
+        )
 
 
 class PipelineTests(unittest.TestCase):
@@ -94,6 +105,33 @@ class PipelineTests(unittest.TestCase):
         expected = delta @ initial_h
         np.testing.assert_allclose(result.homography, expected, atol=1e-4)
         np.testing.assert_allclose(result.delta_homography, delta, atol=1e-4)
+
+    def test_direct_pipeline_accepts_no_line_matches(self):
+        source = np.zeros((100, 100, 3), dtype=np.uint8)
+        destination = np.zeros((100, 100, 3), dtype=np.uint8)
+        points = np.float32(
+            [[10, 10], [80, 10], [10, 80], [80, 80], [45, 25], [25, 55]]
+        )
+        result = stitch_pair(
+            source,
+            destination,
+            StaticPointMatcher(points, points.copy()),
+            EmptyLineMatcher(),
+            max_match_width=0,
+        )
+        self.assertEqual(result.estimation.filtered_matches.lines_source.shape, (0, 2, 2))
+        np.testing.assert_allclose(result.estimation.homography, np.eye(3), atol=1e-5)
+
+    def test_loads_homography_from_npz(self):
+        expected = np.array(
+            [[0.9, 0.1, 12.0], [-0.1, 1.1, 8.0], [0.0, 0.0, 1.0]],
+            dtype=np.float64,
+        )
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "H_init.npz"
+            np.savez(path, H=expected)
+            actual = load_homography(path)
+        np.testing.assert_array_equal(actual, expected)
 
 
 if __name__ == "__main__":

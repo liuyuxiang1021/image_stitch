@@ -8,27 +8,99 @@ OmniGlue 点匹配 ─┐
 LineTR 线匹配 ───┘
 ```
 
-本仓库不包含深度估计、RAFT 光流、运动区域三分区或视频同步，但保留了单应性估计本身的完整点线匹配能力。
+本仓库不包含深度估计、RAFT 光流、运动区域三分区或视频同步，但保留了单应性估计本身的完整点线匹配能力。下面提交的输入和输出均来自原项目中的三个真实场景，不是合成图。
 
-![拼接输出](examples/output/panorama.jpg)
+![运动场场景拼接输出](examples/20201024084037322_cam11/output/panorama.jpg)
 
 ## 功能
 
-- [OmniGlue](https://github.com/google-research/omniglue) 进行跨视角点匹配；
-- [LineTR](https://github.com/yosungho/LineTR) 进行 LSD 线段检测、描述与匹配；
+- [OmniGlue](https://github.com/google-research/omniglue) 跨视角点匹配；
+- [LineTR](https://github.com/yosungho/LineTR) 的 LSD 线段检测、描述与匹配；
 - RANSAC 点匹配初值与线约束后备初值；
-- 基于重投影距离和角度的线匹配过滤；
+- 基于重投影距离和方向角的线匹配过滤；
 - 点重投影误差 + 采样点到线误差的 8 自由度联合优化；
-- Huber 鲁棒权重、点线匹配置信度权重；
+- Huber 鲁棒权重和点线匹配置信度权重；
 - 直接估计 `H`，或从已有 `H_init` 估计 `H_delta` 并生成 `H_final`；
 - 自动画布、有效掩膜和距离羽化融合；
 - 保存矩阵、匹配数量、RMSE 以及点线匹配可视化。
 
 算法和坐标变换的详细说明见 [docs/algorithm.md](docs/algorithm.md)。
 
+## 输入和输出
+
+三个真实样例都采用初值精修模式。每个样例目录的输入含义如下：
+
+| 文件 | 含义 |
+| --- | --- |
+| `input/local.jpg` | 源图：局部相机拍摄的高分辨率、较窄视角图像 |
+| `input/global.jpg` | 目标/参考图：全局相机拍摄并已去畸变的宽视角图像 |
+| `input/H_init.npz` | 原项目标定得到的粗单应性初值，文件内矩阵键为 `H` |
+
+坐标方向始终是从 local 到 global：
+
+```text
+p_global ~ H_final @ p_local
+H_final = H_delta @ H_init
+```
+
+程序先用 `H_init` 将 local 投到 global 坐标系，在有效重叠区域执行 OmniGlue 点匹配和 LineTR 线匹配，再联合优化增量 `H_delta`。每个样例的输出目录包含：
+
+| 文件 | 含义 |
+| --- | --- |
+| `output/panorama.jpg` | 用 `H_final` 投影并羽化融合后的最终图像 |
+| `output/initial_warp.jpg` | 只用 `H_init` 投影 local 的中间结果，便于比较精修前后 |
+| `output/point_line_matches.jpg` | 通过几何过滤并参与估计的点匹配和线匹配可视化 |
+| `output/metadata.json` | 输入路径、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE 和迭代次数 |
+
+这些样例中 local 的视野包含在 global 的部分区域内，因此输出是 global 坐标系下的 `3840 × 2160` 融合图，而不是左右并排、横向扩展的传统全景图。
+
+## 三个真实场景样例
+
+### 1. 运动场：`20201024084037322_cam11`
+
+不同相机视角下的室外运动场。最终保留 382/389 个点匹配和 87/89 个线匹配；点 RMSE 为 1.623 px，线 RMSE 为 1.946 px。
+
+| local 输入 | global 输入 |
+| --- | --- |
+| ![运动场 local](examples/20201024084037322_cam11/input/local.jpg) | ![运动场 global](examples/20201024084037322_cam11/input/global.jpg) |
+
+| 初值投影 | 最终融合输出 |
+| --- | --- |
+| ![运动场 initial warp](examples/20201024084037322_cam11/output/initial_warp.jpg) | ![运动场 panorama](examples/20201024084037322_cam11/output/panorama.jpg) |
+
+![运动场点线匹配](examples/20201024084037322_cam11/output/point_line_matches.jpg)
+
+### 2. 室内展厅：`20210313151132256_cam22`
+
+不同相机视角下的室内展厅。最终保留 641/647 个点匹配和 137/137 个线匹配；点 RMSE 为 1.319 px，线 RMSE 为 1.366 px。
+
+| local 输入 | global 输入 |
+| --- | --- |
+| ![展厅 local](examples/20210313151132256_cam22/input/local.jpg) | ![展厅 global](examples/20210313151132256_cam22/input/global.jpg) |
+
+| 初值投影 | 最终融合输出 |
+| --- | --- |
+| ![展厅 initial warp](examples/20210313151132256_cam22/output/initial_warp.jpg) | ![展厅 panorama](examples/20210313151132256_cam22/output/panorama.jpg) |
+
+![展厅点线匹配](examples/20210313151132256_cam22/output/point_line_matches.jpg)
+
+### 3. 校园道路：`20220817171240976_cam35`
+
+不同相机视角下的室外校园道路。最终保留 466/519 个点匹配和 96/98 个线匹配；点 RMSE 为 1.768 px，线 RMSE 为 1.783 px。
+
+| local 输入 | global 输入 |
+| --- | --- |
+| ![道路 local](examples/20220817171240976_cam35/input/local.jpg) | ![道路 global](examples/20220817171240976_cam35/input/global.jpg) |
+
+| 初值投影 | 最终融合输出 |
+| --- | --- |
+| ![道路 initial warp](examples/20220817171240976_cam35/output/initial_warp.jpg) | ![道路 panorama](examples/20220817171240976_cam35/output/panorama.jpg) |
+
+![道路点线匹配](examples/20220817171240976_cam35/output/point_line_matches.jpg)
+
 ## 安装
 
-项目使用 Python 3.10–3.12。OmniGlue 模型约 400 MB，首次安装需要下载。
+项目支持 Python 3.10–3.12。OmniGlue 模型约 400 MB，首次安装需要下载。
 
 ```bash
 git clone --recursive https://github.com/liuyuxiang1021/image_stitch.git
@@ -38,61 +110,52 @@ conda activate image_stitch
 bash scripts/setup_models.sh
 ```
 
-已有环境也可以：
+已有环境也可以直接运行：
 
 ```bash
-python -m pip install -e '.[full]'
 git submodule update --init --recursive
-python -m pip install --no-deps -e third_party/omniglue
 bash scripts/setup_models.sh
 ```
 
-`setup_models.sh` 使用 OmniGlue 官方说明中的地址下载 SuperPoint、DINOv2 和 OmniGlue 权重。LineTR 及其官方权重由 Git submodule 固定版本提供。默认自动使用 CUDA；没有可用 GPU 时使用 CPU，但模型推理会明显更慢。
+`setup_models.sh` 安装本项目及 OmniGlue，并使用 OmniGlue 官方说明中的地址下载 SuperPoint、DINOv2 和 OmniGlue 权重。LineTR 及其官方权重由 Git submodule 固定版本提供。默认自动使用 CUDA；没有可用 GPU 时使用 CPU，但模型推理会明显更慢。
 
-## 快速开始：直接点线估计
+## 运行真实样例
+
+以运动场样例为例，在仓库根目录运行：
 
 ```bash
+example=examples/20201024084037322_cam11
+
 image-stitch \
-  examples/input/left.png \
-  examples/input/right.png \
-  --output examples/output/panorama.jpg \
-  --artifacts-dir examples/output
+  "$example/input/local.jpg" \
+  "$example/input/global.jpg" \
+  --initial-h "$example/input/H_init.npz" \
+  --output "$example/output/panorama.jpg" \
+  --artifacts-dir "$example/output"
 ```
 
-第一个参数是源图，第二个参数是目标/参考图，输出矩阵满足 `p_destination ~ H @ p_source`。
+将 `example` 改为下面任一目录即可复现另外两个场景：
 
-## 使用已有初值并精修
+```text
+examples/20210313151132256_cam22
+examples/20220817171240976_cam35
+```
 
-`H_init` 可以是 3×3 `.npy` 文件，也可以是 JSON 数组；JSON 对象支持 `homography`、`H_init` 或 `H` 字段。
+运行会覆盖对应目录内已提交的输出。不同 GPU、CUDA/cuDNN 或依赖版本可能造成末位数值差异。
+
+## 直接估计模式
+
+对于两幅视角和尺度差异不大、重叠区域足够的图像，也可以不提供初值，直接通过点线匹配估计单应性：
 
 ```bash
-image-stitch local.jpg global.jpg \
-  --initial-h H_init.json \
+image-stitch source.jpg destination.jpg \
   --output panorama.jpg \
   --artifacts-dir output
 ```
 
-该模式先把 local 图按 `H_init` 投影到 global 坐标，在有效重叠框中进行 OmniGlue + LineTR 匹配，估计增量矩阵，并输出：
+三个仓库样例的 local/global 尺度和视角差异较大，所以使用原项目的 `H_init` 做重叠区域定位，再进行完整的点线匹配精修。
 
-```text
-H_final = H_delta @ H_init
-```
-
-## 输出文件
-
-指定 `--artifacts-dir` 后会生成：
-
-- `metadata.json`：最终 H、画布变换、点线数量、优化迭代次数和误差；
-- `point_line_matches.jpg`：通过几何过滤的点与线匹配；
-- `initial_warp.jpg`：仅在使用 `--initial-h` 时生成。
-
-示例结果：
-
-| 源图 | 目标图 |
-| --- | --- |
-| ![source](examples/input/left.png) | ![destination](examples/input/right.png) |
-
-![点线匹配](examples/output/point_line_matches.jpg)
+`H_init` 支持以下格式：3×3 `.npy`；含 `H_init`、`homography` 或 `H` 键的 `.npz`；JSON 形式的 3×3 数组或含上述字段的对象。
 
 ## 常用参数
 
@@ -114,18 +177,54 @@ OmniGlue 同时使用 TensorFlow 和 PyTorch。CLI 默认只暴露第 0 张 GPU�
 
 ```python
 import cv2 as cv
-from image_stitch import LineTRLineMatcher, OmniGluePointMatcher, stitch_pair
+from image_stitch import (
+    LineTRLineMatcher,
+    OmniGluePointMatcher,
+    load_homography,
+    stitch_pair,
+)
 
-source = cv.imread("local.jpg")
-destination = cv.imread("global.jpg")
+local = cv.imread("local.jpg")
+global_image = cv.imread("global.jpg")
+H_init = load_homography("H_init.npz")
 
-points = OmniGluePointMatcher("models", confidence_threshold=0.1)
+points = OmniGluePointMatcher(
+    "models",
+    confidence_threshold=0.1,
+    omniglue_root="third_party/omniglue",
+)
 lines = LineTRLineMatcher("third_party/LineTR", device="auto")
-result = stitch_pair(source, destination, points, lines)
+result = stitch_pair(
+    local,
+    global_image,
+    points,
+    lines,
+    initial_homography=H_init,
+)
 
 cv.imwrite("panorama.jpg", result.panorama)
 print(result.estimation.homography)
 ```
+
+## 目录结构
+
+```text
+examples/
+├── 20201024084037322_cam11/
+├── 20210313151132256_cam22/
+└── 20220817171240976_cam35/
+    ├── input/
+    │   ├── local.jpg
+    │   ├── global.jpg
+    │   └── H_init.npz
+    └── output/
+        ├── panorama.jpg
+        ├── initial_warp.jpg
+        ├── point_line_matches.jpg
+        └── metadata.json
+```
+
+三个样例目录内部结构相同。
 
 ## 测试
 
@@ -135,7 +234,7 @@ print(result.estimation.homography)
 python -m unittest discover -s tests -v
 ```
 
-测试使用确定性的合成点线约束，覆盖离群点过滤、点线联合优化、画布计算和融合。仓库中的输入图由 `python scripts/generate_example.py` 可重复生成；已提交的输出样例则由完整 OmniGlue + LineTR 流程产生。
+单元测试使用确定性的合成点线约束，覆盖离群点过滤、点线联合优化、无有效线匹配时的回退、初值精修、画布计算和融合；仓库中的三个展示样例则全部由真实图像和完整 OmniGlue + LineTR 流程产生。
 
 ## 第三方项目
 

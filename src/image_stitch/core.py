@@ -48,7 +48,7 @@ def _scale_matches_to_original(
 
     def transform(values, matrix, shape):
         if len(values) == 0:
-            return np.empty(shape, dtype=np.float32)
+            return np.empty((0, *shape[1:]), dtype=np.float32)
         return cv.perspectiveTransform(values.reshape(-1, 1, 2), matrix).reshape(shape)
 
     return FeatureMatches(
@@ -238,6 +238,14 @@ def load_homography(path: str | Path) -> np.ndarray:
     path = Path(path)
     if path.suffix.lower() == ".npy":
         matrix = np.load(path)
+    elif path.suffix.lower() == ".npz":
+        with np.load(path) as archive:
+            for key in ("H_init", "homography", "H"):
+                if key in archive:
+                    matrix = archive[key].copy()
+                    break
+            else:
+                raise ValueError(f"No H_init, homography, or H matrix in {path}")
     else:
         import json
         payload = json.loads(path.read_text(encoding="utf-8"))

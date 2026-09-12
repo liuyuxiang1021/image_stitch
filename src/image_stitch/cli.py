@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--artifacts-dir", type=Path, help="metadata and match visualization")
     parser.add_argument("--model-dir", type=Path, default=Path("models"))
+    parser.add_argument("--omniglue-root", type=Path, default=Path("third_party/omniglue"))
     parser.add_argument("--linetr-root", type=Path, default=Path("third_party/LineTR"))
     parser.add_argument("--initial-h", type=Path, help="optional H_init JSON or NumPy file")
     parser.add_argument("--device", default="auto", choices=("auto", "cpu", "cuda"))
@@ -69,6 +70,7 @@ def _metadata(result, args) -> dict:
         },
     }
     if estimation.initial_homography is not None:
+        payload["initial_h_input"] = str(args.initial_h)
         payload["H_init"] = estimation.initial_homography.tolist()
         payload["H_delta"] = estimation.delta_homography.tolist()
         payload["H_final"] = estimation.homography.tolist()
@@ -85,7 +87,11 @@ def main(argv=None) -> int:
     source = _read_image(args.source)
     destination = _read_image(args.destination)
     initial_h = load_homography(args.initial_h) if args.initial_h else None
-    point_matcher = OmniGluePointMatcher(args.model_dir, args.confidence)
+    point_matcher = OmniGluePointMatcher(
+        args.model_dir,
+        args.confidence,
+        omniglue_root=args.omniglue_root,
+    )
     line_matcher = LineTRLineMatcher(args.linetr_root, device=args.device)
     print("Matching points with OmniGlue and lines with LineTR...")
     try:

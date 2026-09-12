@@ -14,9 +14,15 @@ from .types import HomographyEstimationError
 class OmniGluePointMatcher:
     """Point correspondence adapter around the official OmniGlue release."""
 
-    def __init__(self, model_dir: str | Path, confidence_threshold: float = 0.1):
+    def __init__(
+        self,
+        model_dir: str | Path,
+        confidence_threshold: float = 0.1,
+        omniglue_root: str | Path | None = "third_party/omniglue",
+    ):
         self.model_dir = Path(model_dir)
         self.confidence_threshold = confidence_threshold
+        self.omniglue_root = Path(omniglue_root).resolve() if omniglue_root else None
         self._model = None
 
     def _load(self):
@@ -41,6 +47,13 @@ class OmniGluePointMatcher:
                 tf.config.experimental.set_memory_growth(gpu, True)
         except (ImportError, RuntimeError):
             pass
+        # OmniGlue imports DINOv2 as ``third_party.dinov2``. Its current
+        # editable-package metadata exposes ``dinov2`` instead, so also make
+        # the official repository root importable when a submodule is used.
+        if self.omniglue_root and self.omniglue_root.exists():
+            root_string = str(self.omniglue_root)
+            if root_string not in sys.path:
+                sys.path.insert(0, root_string)
         try:
             import omniglue
         except ImportError as error:
