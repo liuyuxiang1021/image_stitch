@@ -48,11 +48,14 @@ H_final = H_delta @ H_init
 | 文件 | 含义 |
 | --- | --- |
 | `output/panorama.jpg` | 用 `H_final` 投影并羽化融合后的最终图像 |
-| `output/initial_warp.jpg` | 只用 `H_init` 投影 local 的中间结果，便于比较精修前后 |
-| `output/point_line_matches.jpg` | 通过几何过滤并参与估计的点匹配和线匹配可视化 |
-| `output/metadata.json` | 输入路径、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE 和迭代次数 |
+| `output/initial_warp.jpg` | 只用 `H_init` 投影 local 的原始全尺寸结果；投影区域外为黑色 |
+| `output/initial_alignment.jpg` | 清晰版初值可视化：左侧在 global 中定位投影区域，右侧显示放大的 local/global 叠加细节 |
+| `output/point_line_matches.jpg` | 裁到投影 ROI 后的点线匹配可视化，展示尺寸不再受 global 全画布影响 |
+| `output/metadata.json` | 输入路径、投影 ROI、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE 和迭代次数 |
 
 这些样例中 local 的视野包含在 global 的部分区域内，因此输出是 global 坐标系下的 `3840 × 2160` 融合图，而不是左右并排、横向扩展的传统全景图。
+
+`initial_alignment.jpg` 左侧青色轮廓表示 local 经 `H_init` 投影后的实际边界，黄色矩形表示带 32 px 留白的可视化 ROI；右侧将这个 ROI 放大，并按照 local 55%、global 45% 叠加。这样既保留全局位置关系，也能直接观察初值附近的重影和对齐误差。
 
 ## 三个真实场景样例
 
@@ -64,23 +67,23 @@ H_final = H_delta @ H_init
 | --- | --- |
 | ![运动场 local](examples/20201024084037322_cam11/input/local.jpg) | ![运动场 global](examples/20201024084037322_cam11/input/global.jpg) |
 
-| 初值投影 | 最终融合输出 |
+| 初值定位及局部放大 | 最终融合输出 |
 | --- | --- |
-| ![运动场 initial warp](examples/20201024084037322_cam11/output/initial_warp.jpg) | ![运动场 panorama](examples/20201024084037322_cam11/output/panorama.jpg) |
+| ![运动场 initial alignment](examples/20201024084037322_cam11/output/initial_alignment.jpg) | ![运动场 panorama](examples/20201024084037322_cam11/output/panorama.jpg) |
 
 ![运动场点线匹配](examples/20201024084037322_cam11/output/point_line_matches.jpg)
 
 ### 2. 室内展厅：`20210313151132256_cam22`
 
-不同相机视角下的室内展厅。最终保留 641/647 个点匹配和 137/137 个线匹配；点 RMSE 为 1.319 px，线 RMSE 为 1.366 px。
+不同相机视角下的室内展厅。最终保留 641/646 个点匹配和 137/137 个线匹配；点 RMSE 为 1.327 px，线 RMSE 为 1.366 px。
 
 | local 输入 | global 输入 |
 | --- | --- |
 | ![展厅 local](examples/20210313151132256_cam22/input/local.jpg) | ![展厅 global](examples/20210313151132256_cam22/input/global.jpg) |
 
-| 初值投影 | 最终融合输出 |
+| 初值定位及局部放大 | 最终融合输出 |
 | --- | --- |
-| ![展厅 initial warp](examples/20210313151132256_cam22/output/initial_warp.jpg) | ![展厅 panorama](examples/20210313151132256_cam22/output/panorama.jpg) |
+| ![展厅 initial alignment](examples/20210313151132256_cam22/output/initial_alignment.jpg) | ![展厅 panorama](examples/20210313151132256_cam22/output/panorama.jpg) |
 
 ![展厅点线匹配](examples/20210313151132256_cam22/output/point_line_matches.jpg)
 
@@ -92,9 +95,9 @@ H_final = H_delta @ H_init
 | --- | --- |
 | ![道路 local](examples/20220817171240976_cam35/input/local.jpg) | ![道路 global](examples/20220817171240976_cam35/input/global.jpg) |
 
-| 初值投影 | 最终融合输出 |
+| 初值定位及局部放大 | 最终融合输出 |
 | --- | --- |
-| ![道路 initial warp](examples/20220817171240976_cam35/output/initial_warp.jpg) | ![道路 panorama](examples/20220817171240976_cam35/output/panorama.jpg) |
+| ![道路 initial alignment](examples/20220817171240976_cam35/output/initial_alignment.jpg) | ![道路 panorama](examples/20220817171240976_cam35/output/panorama.jpg) |
 
 ![道路点线匹配](examples/20220817171240976_cam35/output/point_line_matches.jpg)
 
@@ -220,6 +223,7 @@ examples/
     └── output/
         ├── panorama.jpg
         ├── initial_warp.jpg
+        ├── initial_alignment.jpg
         ├── point_line_matches.jpg
         └── metadata.json
 ```

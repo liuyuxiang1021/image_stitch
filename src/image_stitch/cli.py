@@ -12,7 +12,11 @@ import cv2 as cv
 from .core import load_homography, stitch_pair
 from .matchers import LineTRLineMatcher, OmniGluePointMatcher
 from .types import HomographyEstimationError
-from .visualization import draw_matches
+from .visualization import (
+    draw_initial_alignment,
+    draw_matches,
+    projected_source_bounds,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -113,13 +117,34 @@ def main(argv=None) -> int:
         raise SystemExit(f"error: could not write {args.output}")
     if args.artifacts_dir:
         args.artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (args.artifacts_dir / "metadata.json").write_text(json.dumps(_metadata(result, args), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        metadata = _metadata(result, args)
         match_source = source
+        match_region = None
         if initial_h is not None:
             match_source = cv.warpPerspective(source, initial_h, (destination.shape[1], destination.shape[0]))
             cv.imwrite(str(args.artifacts_dir / "initial_warp.jpg"), match_source)
-        visualization = draw_matches(match_source, destination, result.estimation.filtered_matches)
+            match_region = projected_source_bounds(
+                source, destination, initial_h, padding=32
+            )
+            metadata["initial_projection_roi_xywh"] = list(match_region)
+            initial_alignment = draw_initial_alignment(
+                source, destination, initial_h, padding=32
+            )
+            cv.imwrite(
+                str(args.artifacts_dir / "initial_alignment.jpg"),
+                initial_alignment,
+            )
+        visualization = draw_matches(
+            match_source,
+            destination,
+            result.estimation.filtered_matches,
+            region=match_region,
+        )
         cv.imwrite(str(args.artifacts_dir / "point_line_matches.jpg"), visualization)
+        (args.artifacts_dir / "metadata.json").write_text(
+            json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     diagnostics = result.estimation.diagnostics
     print(f"Wrote {args.output} ({result.panorama.shape[1]}x{result.panorama.shape[0]})")
     print(f"Accepted {diagnostics.points_after_filter}/{diagnostics.points_before_filter} points, {diagnostics.lines_after_filter}/{diagnostics.lines_before_filter} lines; point RMSE={diagnostics.point_rmse!s}, line RMSE={diagnostics.line_rmse!s}")

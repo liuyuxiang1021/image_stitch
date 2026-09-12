@@ -2,7 +2,6 @@
   "source": "examples/20220817171240976_cam35/input/local.jpg",
   "destination": "examples/20220817171240976_cam35/input/global.jpg",
   "mode": "refine_initial_h",
-  "initial_h_input": "examples/20220817171240976_cam35/input/H_init.npz",
   "homography_source_to_destination": [
     [
       0.09519719055802042,
@@ -70,6 +69,7 @@
     "point_weight": 0.5,
     "line_weight": 0.5
   },
+  "initial_h_input": "examples/20220817171240976_cam35/input/H_init.npz",
   "H_init": [
     [
       0.09268493902942282,
@@ -120,5 +120,11 @@
       -4.2643673342142465e-06,
       0.7682600527670405
     ]
+  ],
+  "initial_projection_roi_xywh": [
+    2613,
+    1221,
+    696,
+    413
   ]
 }
