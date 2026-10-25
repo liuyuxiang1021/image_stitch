@@ -1,0 +1,39 @@
+{
+  "scene": "20210304162543165",
+  "camera": "11",
+  "source_project": "image_stitching",
+  "source_video_frame_range_inclusive": [
+    5801,
+    6000
+  ],
+  "frame_count": 200,
+  "video_fps": 25,
+  "local_scale_from_original": 0.5,
+  "global_display_crop_original_xyxy": [
+    252,
+    432,
+    1322,
+    1218
+  ],
+  "initial_projection_roi_original_xyxy": [
+    423,
+    630,
+    1081,
+    990
+  ],
+  "initial_projection_roi_sample_xyxy": [
+    171,
+    198,
+    829,
+    558
+  ],
+  "inputs": {
+    "local_frame": "input/local.jpg",
+    "global_frame": "input/global.jpg",
+    "initial_homography": "input/H_init.npz",
+    "reference_final_homography": "input/H_final_reference.npz",
+    "local_initial_projection_roi_video": "input/local_init_roi.mp4",
+    "global_initial_projection_roi_video": "input/global_roi.mp4"
+  },
+  "note": "ROI videos are actual camera frames cropped into H_init coordinates; they are intended for independent motion-mask computation."
+}

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "image-stitch-point-line"
 version = "0.1.0"
-description = "Image stitching with OmniGlue points, LineTR lines, and robust homography optimization"
+description = "Point-line and motion-aware three-region image stitching"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
@@ -23,9 +23,11 @@ full = [
   "torch>=1.13",
 ]
 dev = ["pytest>=7"]
+benchmark = ["scikit-image>=0.20"]
 
 [project.scripts]
 image-stitch = "image_stitch.cli:main"
+three-region-stitch = "three_region_stitch.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

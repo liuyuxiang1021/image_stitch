@@ -1,0 +1,22 @@
+{
+  "scene": "20220806141041707",
+  "static_common_pixels": 74921,
+  "static_overlap_protocol": "intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px",
+  "methods": {
+    "SIFT_RANSAC_H": {
+      "psnr_db": 16.539,
+      "ssim": 0.5282,
+      "ratio_test_matches": 276,
+      "ransac_inliers": 234
+    },
+    "OmniGlue_LineTR_H": {
+      "psnr_db": 16.749,
+      "ssim": 0.5504
+    },
+    "motion_H_plus_RAFT_static": {
+      "psnr_db": 18.256,
+      "ssim": 0.6718
+    }
+  },
+  "interpretation_limit": "Static-overlap alignment only; no ground-truth panorama or motion-region perceptual quality score."
+}
