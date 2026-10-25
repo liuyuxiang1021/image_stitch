@@ -127,7 +127,7 @@ def main(argv=None) -> int:
     geometry_info: dict = {"mode": args.geometry_mode}
     if args.geometry_mode == "cached":
         h_final = load_homography(inputs["reference_final_homography"])
-        geometry_info["source"] = "original_point_line_motion_homography"
+        geometry_info["source"] = "cached_point_line_motion_homography"
     else:
         from image_stitch import LineTRLineMatcher, OmniGluePointMatcher
 

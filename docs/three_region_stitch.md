@@ -4,14 +4,14 @@
 
 ## 输入、坐标与场景
 
-样例根目录为 `examples/three_region_stitch/<scene>_cam11/`，包含商街人群 `20220806141041707_cam11` 和城市道路 `20210304162543165_cam11`。每组都有来自两台相机的同步第 6000 帧、原项目相机标定算出的 `H_init`，以及原工程点线运动区估计得到的 `H_final_reference`。为了让数据可随仓库运行，Local 静帧缩至原宽高的一半；Global 截取同一观察区域，所有矩阵已换算为仓库样例坐标。每个视角随附第 5801–6000 帧共 200 帧、25 fps 的真实 ROI 视频。
+样例根目录为 `examples/three_region_stitch/<scene>_cam11/`，包含商街人群 `20220806141041707_cam11`、城市道路 `20210304162543165_cam11` 和运动场人群 `20220601174105159_cam11`。每组都有来自两台相机的同步第 6000 帧、原项目相机标定算出的 `H_init`，以及可供缓存复现的点线精修矩阵 `H_final_reference`。为了让数据可随仓库运行，Local 静帧缩至原宽高的一半；Global 截取同一观察区域，所有矩阵已换算为仓库样例坐标。每个视角随附第 5801–6000 帧共 200 帧、25 fps 的真实 ROI 视频。
 
 | 文件 | 含义 |
 | --- | --- |
 | `input/local.jpg` | 最后一帧 Local 原图，1920 × 1080 |
 | `input/global.jpg` | 去畸变 Global 最后一帧的展示裁剪，1070 × 786 |
 | `input/H_init.npz` | 标定初值，Local 像素到样例 Global 像素，矩阵键 `H` |
-| `input/H_final_reference.npz` | 原工程运动区点线匹配的结果，用于快速缓存复现 |
+| `input/H_final_reference.npz` | 对应样例掩膜与 RAFT 缓存的点线精修矩阵，用于快速复现 |
 | `input/local_init_roi.mp4` | Local 视频经 `H_init` 投影、再截取投影 ROI |
 | `input/global_roi.mp4` | Global 视频去畸变后截取同一个 ROI |
 | `input/local_motion_init_mask.png`、`input/global_motion_mask.png` | 由上述两个视频分别算出的掩膜缓存 |
@@ -35,6 +35,7 @@
 python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 three-region-stitch --example examples/three_region_stitch/20210304162543165_cam11
+three-region-stitch --example examples/three_region_stitch/20220601174105159_cam11
 ```
 
 缓存模式会从真实视频实验保存的掩膜、点线结果矩阵和 RAFT 输出重新计算三区归属与融合。需要重算运动掩膜时：
@@ -83,22 +84,28 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ![道路纯拼接与三分区域对照](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/comparison_focus.jpg)
 
+运动场人群最后一帧同范围对照：
+
+![运动场纯拼接与三分区域对照](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/comparison_focus.jpg)
+
 ![道路静态共同区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
 
 ## 评测协议与边界
 
-两个场景的纯点线输出均用本仓库 `image-stitch` 对**同一帧**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效的像素、且 Local/Global 都判静态的部分，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global 最后一帧的 PSNR/SSIM。运行：
+三个场景的纯点线输出均用本仓库 `image-stitch` 对**同一帧**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效的像素、且 Local/Global 都判静态的部分，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global 最后一帧的 PSNR/SSIM。运行：
 
 ```bash
 python -m pip install -e '.[benchmark]'
 python scripts/evaluate_three_region.py --example examples/three_region_stitch/20220806141041707_cam11
 python scripts/evaluate_three_region.py --example examples/three_region_stitch/20210304162543165_cam11
+python scripts/evaluate_three_region.py --example examples/three_region_stitch/20220601174105159_cam11
 ```
 
 | 场景 | 共同静态像素 | SIFT + RANSAC | 纯点线 H | RAFT 静态区 |
 | --- | ---: | ---: | ---: | ---: |
 | 商街人群 | 74,921 | 16.539 dB / 0.5282 | 16.749 dB / 0.5504 | 18.236 dB / 0.6703 |
 | 城市道路 | 99,603 | 19.602 dB / 0.6637 | 17.754 dB / 0.5108 | 20.667 dB / 0.7145 |
+| 运动场人群 | 91,812 | 18.111 dB / 0.5468 | 17.850 dB / 0.5115 | 18.499 dB / 0.5508 |
 
 这个诊断只回答“静态重叠像素与 Global 对得怎样”。两相机曝光、遮挡和视角不同，指标本身也会受影响；运动区域没有无遮挡的真值，不能用这些数字评价运动目标的融合质量。[UDIS2 官方仓库](https://github.com/nie-lang/UDIS2)所用的 UDIS-D 是静态图像对数据集，与这里的双视角时序掩膜设置不同，因此没有把本结果写成 UDIS-D 榜单分数。单应性在存在视差和动态物体时可能产生重影，这也是三分区尝试解决的问题；背景参考见[APAP 项目页](https://cs.adelaide.edu.au/~tjchin/apap/)。
 

@@ -16,7 +16,7 @@
   "motion_mode": "cached",
   "geometry": {
     "mode": "cached",
-    "source": "original_point_line_motion_homography"
+    "source": "cached_point_line_motion_homography"
   },
   "flow_mode": "cached",
   "one_sided_to_raft": true,
