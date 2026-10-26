@@ -80,6 +80,36 @@ def prepare_regions(
     )
 
 
+def feather_sources(
+    sources: tuple[np.ndarray, ...],
+    masks: tuple[np.ndarray, ...],
+    radius: int,
+) -> np.ndarray:
+    if not sources or len(sources) != len(masks):
+        raise ValueError("Each feathered source must have a corresponding ownership mask")
+    if any(source.shape != sources[0].shape for source in sources):
+        raise ValueError("Feathered sources must have the same canvas shape")
+    if any(mask.shape != sources[0].shape[:2] for mask in masks):
+        raise ValueError("Feathering masks must match the source canvas")
+    if radius <= 0:
+        result = sources[0].copy()
+        for source, mask in zip(sources[1:], masks[1:]):
+            result[mask > 0] = source[mask > 0]
+        return result
+    kernel = 2 * radius + 1
+    weights = [
+        cv.GaussianBlur((mask > 0).astype(np.float32), (kernel, kernel),
+                        sigmaX=max(radius / 2, 1))
+        for mask in masks
+    ]
+    denominator = np.maximum(sum(weights), 1e-6)
+    blended = sum(
+        source.astype(np.float32) * (weight / denominator)[..., None]
+        for source, weight in zip(sources, weights)
+    )
+    return np.clip(blended, 0, 255).astype(np.uint8)
+
+
 def _feather_three_sources(
     global_frame: np.ndarray,
     raft_warped: np.ndarray,
@@ -87,24 +117,11 @@ def _feather_three_sources(
     masks: RegionMasks,
     radius: int,
 ) -> np.ndarray:
-    if radius <= 0:
-        result = global_frame.copy()
-        result[masks.raft_region > 0] = raft_warped[masks.raft_region > 0]
-        result[masks.homography_region > 0] = homography_warped[masks.homography_region > 0]
-        return result
-    kernel = 2 * radius + 1
-    weights = [
-        cv.GaussianBlur((mask > 0).astype(np.float32), (kernel, kernel),
-                        sigmaX=max(radius / 2, 1))
-        for mask in (masks.global_region, masks.raft_region, masks.homography_region)
-    ]
-    denominator = np.maximum(weights[0] + weights[1] + weights[2], 1e-6)
-    sources = (global_frame, raft_warped, homography_warped)
-    blended = sum(
-        source.astype(np.float32) * (weight / denominator)[..., None]
-        for source, weight in zip(sources, weights)
+    return feather_sources(
+        (global_frame, raft_warped, homography_warped),
+        (masks.global_region, masks.raft_region, masks.homography_region),
+        radius,
     )
-    return np.clip(blended, 0, 255).astype(np.uint8)
 
 
 def compose_three_regions(

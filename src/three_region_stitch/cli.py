@@ -15,7 +15,12 @@ from image_stitch import load_homography
 from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
-from .regions import compose_three_regions, compose_with_global_sr, prepare_regions
+from .regions import (
+    compose_three_regions,
+    compose_with_global_sr,
+    feather_sources,
+    prepare_regions,
+)
 from .super_resolution import FSRCNNX4, sharpen_for_display
 from .visualization import region_overlay, same_crop_images, tint
 
@@ -47,17 +52,32 @@ def _last_video_frame(path: Path) -> np.ndarray:
     return frame
 
 
-def _pure_on_global_canvas(path: Path, shape: tuple[int, int, int]) -> np.ndarray:
-    pure = _read_image(path)
-    if pure.shape == shape:
-        return pure
+def _pure_on_global_canvas(
+    path: Path,
+    local_frame: np.ndarray,
+    global_frame: np.ndarray,
+    feather_radius: int,
+) -> np.ndarray:
     metadata_path = path.parent / "pure_artifacts" / "metadata.json"
     if not metadata_path.is_file():
-        raise ValueError(f"Pure result has another canvas size; metadata missing: {metadata_path}")
+        raise ValueError(f"Cannot apply shared comparison feathering; metadata missing: {metadata_path}")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    source_to_canvas = np.asarray(metadata["source_to_canvas"], dtype=np.float64)
     destination_to_canvas = np.asarray(metadata["destination_to_canvas"], dtype=np.float64)
-    return cv.warpPerspective(
-        pure, np.linalg.inv(destination_to_canvas), (shape[1], shape[0]),
+    source_to_global = np.linalg.inv(destination_to_canvas) @ source_to_canvas
+    height, width = global_frame.shape[:2]
+    warped_local = cv.warpPerspective(local_frame, source_to_global, (width, height))
+    local_valid = cv.warpPerspective(
+        np.full(local_frame.shape[:2], 255, dtype=np.uint8),
+        source_to_global,
+        (width, height),
+        flags=cv.INTER_NEAREST,
+    )
+    global_region = cv.bitwise_not(local_valid)
+    return feather_sources(
+        (global_frame, warped_local),
+        (global_region, local_valid),
+        feather_radius,
     )
 
 
@@ -70,7 +90,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--flow-mode", choices=("cached", "raft"), default="cached")
     parser.add_argument("--recompute-all", action="store_true", help="recompute masks, point-line H, and RAFT")
     parser.add_argument("--one-sided-to-raft", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--feather-radius", type=int, default=2)
+    parser.add_argument(
+        "--feather-radius", type=int, default=2,
+        help="shared Gaussian feather radius for three-region and pure-stitch comparison images",
+    )
     parser.add_argument(
         "--sr-mode", choices=("global-fsrcnn", "none"), default="global-fsrcnn",
         help="super-resolve the Global background with FSRCNN x4 (default) or skip it",
@@ -206,7 +229,9 @@ def main(argv=None) -> int:
     pure_path = args.pure_output or example / "output" / "pure_stitch.jpg"
     comparison_paths = None
     if pure_path.is_file():
-        pure = _pure_on_global_canvas(pure_path, global_frame.shape)
+        pure = _pure_on_global_canvas(
+            pure_path, local, global_frame, args.feather_radius,
+        )
         pure_focus, three_region_focus = same_crop_images(pure, composed.image, roi)
         pure_focus_path = output / "pure_stitch_focus.jpg"
         three_region_focus_path = output / "three_region_focus.jpg"
