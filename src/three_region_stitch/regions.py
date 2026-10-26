@@ -148,3 +148,61 @@ def compose_three_regions(
         global_frame, raft_warped, prepared.homography_warp, masks, feather_radius,
     )
     return CompositeResult(result, prepared.homography_warp, masks)
+
+
+def compose_with_global_sr(
+    global_sr: np.ndarray,
+    local_frame: np.ndarray,
+    h_final: np.ndarray,
+    raft_warped: np.ndarray,
+    regions: RegionMasks,
+    *,
+    feather_radius: int = 2,
+) -> CompositeResult:
+    """Composite Local H/RAFT regions over a super-resolved Global background.
+
+    ``h_final`` maps source Local coordinates to the native Global canvas.
+    The Local homography warp is rendered directly at the enlarged output size;
+    the already aligned RAFT image and ownership masks are resized to match it.
+    """
+    base_height, base_width = raft_warped.shape[:2]
+    out_height, out_width = global_sr.shape[:2]
+    if raft_warped.ndim != 3 or global_sr.ndim != 3:
+        raise ValueError("Global SR and RAFT inputs must be color images")
+    if global_sr.shape[2] != 3 or raft_warped.shape[2] != 3:
+        raise ValueError("Global SR and RAFT inputs must have three color channels")
+    if out_width % base_width or out_height % base_height:
+        raise ValueError("Global SR canvas must be an integer multiple of the native canvas")
+    scale_x, scale_y = out_width // base_width, out_height // base_height
+    if scale_x != scale_y:
+        raise ValueError("Global SR canvas must use the same scale in both dimensions")
+    if scale_x < 1:
+        raise ValueError("Global SR canvas cannot be smaller than the native canvas")
+
+    size = (out_width, out_height)
+    scale_matrix = np.diag([float(scale_x), float(scale_y), 1.0])
+    h_highres = scale_matrix @ np.asarray(h_final, dtype=np.float64)
+    homography_warp = cv.warpPerspective(local_frame, h_highres, size)
+    raft_highres = cv.resize(raft_warped, size, interpolation=cv.INTER_CUBIC)
+
+    def enlarge_mask(mask: np.ndarray) -> np.ndarray:
+        if mask.shape != (base_height, base_width):
+            raise ValueError("Region masks must match the native Global canvas")
+        return cv.resize(mask, size, interpolation=cv.INTER_NEAREST)
+
+    highres_regions = RegionMasks(
+        local_motion_final=enlarge_mask(regions.local_motion_final),
+        mutual_motion=enlarge_mask(regions.mutual_motion),
+        static_exclusion=enlarge_mask(regions.static_exclusion),
+        global_region=enlarge_mask(regions.global_region),
+        raft_region=enlarge_mask(regions.raft_region),
+        homography_region=enlarge_mask(regions.homography_region),
+    )
+    highres_result = _feather_three_sources(
+        global_sr,
+        raft_highres,
+        homography_warp,
+        highres_regions,
+        feather_radius * scale_x,
+    )
+    return CompositeResult(highres_result, homography_warp, highres_regions)

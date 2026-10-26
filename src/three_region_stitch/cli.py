@@ -15,7 +15,8 @@ from image_stitch import load_homography
 from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
-from .regions import compose_three_regions, prepare_regions
+from .regions import compose_three_regions, compose_with_global_sr, prepare_regions
+from .super_resolution import FSRCNNX4, sharpen_for_display
 from .visualization import compare_same_crop, region_overlay, tint
 
 
@@ -70,6 +71,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--recompute-all", action="store_true", help="recompute masks, point-line H, and RAFT")
     parser.add_argument("--one-sided-to-raft", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--feather-radius", type=int, default=2)
+    parser.add_argument(
+        "--sr-mode", choices=("global-fsrcnn", "none"), default="global-fsrcnn",
+        help="super-resolve the Global background with FSRCNN x4 (default) or skip it",
+    )
+    parser.add_argument("--sr-model", type=Path, default=Path("models/FSRCNN_x4.pb"))
+    parser.add_argument("--sr-tile-size", type=int, default=512)
+    parser.add_argument("--sr-tile-overlap", type=int, default=24)
     parser.add_argument("--model-dir", type=Path, default=Path("models"))
     parser.add_argument("--omniglue-root", type=Path, default=Path("third_party/omniglue"))
     parser.add_argument("--linetr-root", type=Path, default=Path("third_party/LineTR"))
@@ -90,6 +98,8 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     if args.feather_radius < 0:
         raise SystemExit("feather-radius must be non-negative")
+    if args.sr_tile_size < 16 or args.sr_tile_overlap < 0 or args.sr_tile_overlap * 2 >= args.sr_tile_size:
+        raise SystemExit("invalid FSRCNN tile size or overlap")
     if args.device == "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
     else:
@@ -200,6 +210,40 @@ def main(argv=None) -> int:
         comparison_path = output / "comparison_focus.jpg"
         _write_image(comparison_path, compare_same_crop(pure, composed.image, roi))
 
+    sr_info = {"mode": args.sr_mode}
+    if args.sr_mode == "global-fsrcnn":
+        model_path = args.sr_model.resolve()
+        sr_model = FSRCNNX4(
+            model_path,
+            tile_size=args.sr_tile_size,
+            overlap=args.sr_tile_overlap,
+        )
+        global_sr = sharpen_for_display(sr_model.upsample(global_frame))
+        sr_composed = compose_with_global_sr(
+            global_sr,
+            local,
+            h_final,
+            raft_warped,
+            composed.regions,
+            feather_radius=args.feather_radius,
+        )
+        sr_result_path = output / "final_result_global_fsrcnn_x4.jpg"
+        sr_overlay_path = output / "region_overlay_on_global_fsrcnn_x4.jpg"
+        sr_background_path = output / "global_background_fsrcnn_x4.jpg"
+        _write_image(sr_background_path, global_sr)
+        _write_image(sr_result_path, sr_composed.image)
+        _write_image(sr_overlay_path, region_overlay(global_sr, sr_composed.regions))
+        sr_info.update({
+            "model": str(args.sr_model),
+            "scale": FSRCNNX4.scale,
+            "tile_size": args.sr_tile_size,
+            "tile_overlap": args.sr_tile_overlap,
+            "background": str(sr_background_path.relative_to(example)),
+            "final_result": str(sr_result_path.relative_to(example)),
+            "region_overlay": str(sr_overlay_path.relative_to(example)),
+            "output_shape": list(sr_composed.image.shape),
+        })
+
     summary = {
         "scene": manifest["scene"],
         "camera": manifest["camera"],
@@ -211,6 +255,7 @@ def main(argv=None) -> int:
         "flow_mode": args.flow_mode,
         "one_sided_to_raft": args.one_sided_to_raft,
         "feather_radius": args.feather_radius,
+        "super_resolution": sr_info,
         "H_init": h_initial.tolist(),
         "H_final": h_final.tolist(),
         "region_pixels": {

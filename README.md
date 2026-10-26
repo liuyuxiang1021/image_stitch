@@ -18,19 +18,18 @@
 
 ### 算法流程
 
-算法把 Local 视角的内容合入 Global 视角，重点处理行人、车辆等动态物体造成的错位和重影。输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的短视频。算法不需要深度图；运动信息来自视频，稠密对齐由 RAFT 光流提供。
+算法的动机是处理前景与背景在视角变化下产生的视差错位，例如树木、路灯杆等近景结构难以和远处背景同时对齐。Local/Global 短视频得到的运动掩膜提供区域划分线索；人、车等动态区域也参与判断，但算法目标不限于消除它们的重影。输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的短视频。
 
 1. **建立几何初值**：用 `H_init` 把 Local 映射到 Global 坐标系，作为两视角对齐的起点。
-2. **精修运动区域单应性**：进行 Local/Global 点线匹配，并只保留两侧运动掩膜都覆盖到的对应，估计精修后的 `H_final`，用于红色区域的投影。
-3. **分别生成运动掩膜**：从 Local 和 Global 短视频中各自提取运动掩膜。将 Local 掩膜投影到 Global 坐标系，并与 Global 掩膜比较；同时检查 Local 投影是否有效。
-4. **生成三区归属图**：按下表为 Global 画布中的像素选择来源。蓝色区域还需通过 RAFT 前后向一致性检查；检查失败或没有有效 Local 投影的像素由 Global 保留。
-5. **合成输出**：按三区归属合成一张 Global 坐标系下的结果，只在区域交界附近羽化 2 px。
+2. **提取运动线索并精修单应性**：从两路短视频分别生成运动掩膜；进行 Local/Global 点线匹配，只保留两侧运动掩膜都覆盖到的对应，估计 `H_final`。
+3. **生成三区归属图**：将 Local 运动掩膜按 `H_delta` 从初始投影位置更新到 `H_final` 对应的 Global 坐标系，与 Global 运动掩膜比较，并检查 Local 投影有效性。蓝色区域还需通过 RAFT 前后向一致性检查。
+4. **合成高分辨率结果**：先对 Global 背景执行 FSRCNN x4，再将红色单应性区域和蓝色 RAFT 区域的 Local 内容合入对应位置。像素归属无效或 RAFT 检查失败的位置由 Global 超分背景填充。仅在三区边界附近羽化，默认半径为原画布 2 px。
 
 | 可视化颜色 | 区域条件 | 合成来源 |
 | --- | --- | --- |
 | 红色 | Global 判为运动，投影后的 Local 也判为运动，且 Local 投影有效 | 使用 `H_final` 投影 Local |
 | 蓝色 | 其余有效重叠区域，且 RAFT 前后向一致性检查通过 | 使用 RAFT 对齐后的 Local |
-| 绿色 | 不属于上述两区，或 Local 投影/RAFT 对齐无效 | 保留 Global |
+| 绿色 | 不属于上述两区，或 Local 投影/RAFT 对齐无效 | 使用 FSRCNN x4 超分后的 Global 背景 |
 
 当前展示这一组商街样例。Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
@@ -40,15 +39,17 @@
 | --- | --- |
 | ![商街 Local](examples/three_region_stitch/20220806141041707_cam11/input/local.jpg) | ![商街 Global](examples/three_region_stitch/20220806141041707_cam11/input/global.jpg) |
 
-![商街三分区域叠加于 Global](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global.jpg)
+![商街三区叠加于 Global 超分背景](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
 
 ![商街同范围纯拼接和三分区域对照](examples/three_region_stitch/20220806141041707_cam11/output/three_region/comparison_focus.jpg)
+
+![商街 Global 超分背景上的最终三分区域融合结果](examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
 
 ![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
 
 ## 快速运行
 
-在 Python 3.10–3.12 环境中安装基础包，然后先运行不需下载模型的缓存复现。仓库内缓存的是上述真实视频运行得到的运动掩膜、点线精修矩阵和 RAFT 对齐结果；程序会重新完成三区归属和融合。
+在 Python 3.10–3.12 环境中安装基础包，然后运行缓存复现。仓库内附 FSRCNN x4 权重，并缓存真实视频运行得到的运动掩膜、点线精修矩阵和 RAFT 对齐结果；程序会重新完成三区归属、Global 背景超分和融合。
 
 ```bash
 git clone --recursive https://github.com/liuyuxiang1021/image_stitch.git
@@ -57,7 +58,7 @@ python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 ```
 
-输出在该样例的 `output/three_region/`：`final_result.jpg` 是无标注最终融合图，`region_overlay_on_global.jpg` 是区域归属，`comparison_focus.jpg` 是同一 ROI 的纯拼接/三分区域并排图，`summary.json` 记录矩阵、运行模式与像素数。可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜；完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
+输出在该样例的 `output/three_region/`：`final_result.jpg` 是原画布分辨率融合结果，`final_result_global_fsrcnn_x4.jpg` 是 Global 背景经 FSRCNN x4 后再合入 Local 区域的高分辨率结果，`region_overlay_on_global_fsrcnn_x4.jpg` 展示同一高分辨率背景上的区域归属，`comparison_focus.jpg` 是原画布分辨率下同一 ROI 的纯拼接/三分区域对照，`summary.json` 记录矩阵、运行模式与像素数。可用 `--sr-mode none` 跳过超分；可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
 
 ## 同场景小规模评测
 

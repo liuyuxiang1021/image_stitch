@@ -21,6 +21,21 @@
   "flow_mode": "cached",
   "one_sided_to_raft": true,
   "feather_radius": 2,
+  "super_resolution": {
+    "mode": "global-fsrcnn",
+    "model": "models/FSRCNN_x4.pb",
+    "scale": 4,
+    "tile_size": 512,
+    "tile_overlap": 24,
+    "background": "output/three_region/global_background_fsrcnn_x4.jpg",
+    "final_result": "output/three_region/final_result_global_fsrcnn_x4.jpg",
+    "region_overlay": "output/three_region/region_overlay_on_global_fsrcnn_x4.jpg",
+    "output_shape": [
+      3144,
+      4280,
+      3
+    ]
+  },
   "H_init": [
     [
       0.3730437659723248,

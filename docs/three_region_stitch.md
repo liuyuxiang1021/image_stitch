@@ -21,15 +21,18 @@
 
 ## 算法
 
+这套方法主要针对前景与背景因视角变化产生的视差错位。树木、路灯杆等近景结构和远处背景通常无法由同一个单应性同时贴合。视频运动掩膜作为区域先验，帮助决定哪些 Local 像素采用运动区单应性、哪些采用 RAFT、哪些由 Global 背景提供。
+
 1. 每个视频按 100 帧分段，用逐像素中位帧作参考；当前帧与参考灰度差超过 36 的像素取并集，做 5 × 5 开运算和小连通域过滤，合并分段。得到 `M_local_init` 和 `M_global`。掩膜表达的是这段时间内曾运动的区域，包含位置轨迹，并非最后一帧的人体实例分割。
-2. 用 `H_init` 将 Local 最后一帧投到 Global 坐标系，在 ROI 内执行 OmniGlue 点匹配、LineTR 线匹配。点两端、线中点分别必须落在对应视角的运动掩膜内，随后稳健估计增量 `H_delta`，得到 `H_final = H_delta @ H_init`。约束不足时保留 `H_init`，并在 `summary.json` 记录原因。
+2. 用 `H_init` 将 Local 最后一帧投到 Global 坐标系，在 ROI 内执行 OmniGlue 点匹配、LineTR 线匹配。点两端、线中点分别必须落在对应视角各自的运动掩膜内，随后稳健估计增量 `H_delta`，得到 `H_final = H_delta @ H_init`。约束不足时保留 `H_init`，并在 `summary.json` 记录原因。
 3. 将 `M_local_init` 经 `H_delta` 变成 `M_local_final`，再在 Global 画布上取交集：`red = M_local_final ∩ M_global ∩ valid_local_final`。这正是双视角都判运动的有效 Local 投影区域，使用 `H_final` 投影的 Local。
-4. 其他 Local 有效重叠像素作为静态对齐候选，包括只有一侧判运动而被交集剔除的像素。对 `H_final` 投影的 Local 与 Global 运行双向 RAFT，用前后向误差 < 3 px 和取样有效性过滤；通过的归蓝色 RAFT 区。其余像素保留 Global，归绿色。三区互斥并覆盖整个 Global 画布。
-5. 只在三区交界半径 2 px 的邻域做高斯权重羽化。图像仍以 Global 的 1070 × 786 画布输出。红色/蓝色/绿色是可视化着色，`final_result.jpg` 无色框、无伪彩色。
+4. 其他 Local 有效重叠像素作为 RAFT 候选，包括只有一侧判运动而被红色交集剔除的像素。对 `H_final` 投影的 Local 与 Global 运行双向 RAFT，用前后向误差 < 3 px 和取样有效性过滤；通过的归蓝色 RAFT 区。未被红、蓝区接管的像素归绿色，由 Global 背景提供。三区互斥并覆盖整个 Global 画布。
+5. 原画布分辨率下，只在三区交界半径 2 px 的邻域做高斯权重羽化，输出 `final_result.jpg`，它用于对齐诊断和指标计算。
+6. 高分辨率展示时，先对 Global 背景做 FSRCNN x4，再把 Local 的单应性区和 RAFT 区合入放大的画布；绿色区因此来自超分后的 Global 背景，Local 区域保持来自相机图像的细节。边界羽化半径同步放大到 8 px，输出 `final_result_global_fsrcnn_x4.jpg`。颜色归属图也叠在同一张 Global 超分背景上。
 
 ## 复现
 
-基础安装及缓存复现不需要 GPU 或下载权重：
+基础安装及缓存复现不需要 GPU 或下载 RAFT/OmniGlue/LineTR 权重；仓库自带 FSRCNN x4 权重用于生成高分辨率 Global 背景：
 
 ```bash
 python -m pip install -e .
@@ -59,8 +62,10 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | 文件 | 说明 |
 | --- | --- |
 | `output/pure_stitch.jpg` | 同一 Local/Global 最后一帧的完整纯点线 H 拼接对照 |
-| `output/three_region/final_result.jpg` | 无标注的最终三分区域融合图 |
-| `output/three_region/region_overlay_on_global.jpg` | 原 Global 背景上叠红/蓝/绿三区 |
+| `output/three_region/final_result.jpg` | 原画布分辨率的三分区域融合图，用于诊断和指标计算 |
+| `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果 |
+| `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上叠红/蓝/绿三区 |
+| `output/three_region/global_background_fsrcnn_x4.jpg` | FSRCNN x4 处理后的 Global 背景 |
 | `output/three_region/comparison_focus.jpg` | 同一个 ROI：左纯点线 H，右三分区域 |
 | `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI 最后一帧上的各自运动掩膜 |
 | `output/three_region/region_*_mask.png` | 三个互斥最终区域的二值掩膜 |
@@ -68,9 +73,13 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | `output/benchmark/metrics.json` | SIFT/纯点线 H/RAFT 静态区共同像素的指标 |
 | `output/benchmark/static_error_heatmaps.jpg` | 同一静态共同掩膜、同一误差色标下与 Global 参考帧的误差图 |
 
-商街人群的区域图：
+商街人群在 Global 超分背景上的区域归属图：
 
-![商街区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global.jpg)
+![商街 Global 超分背景上的区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
+
+商街人群的高分辨率最终融合图：
+
+![商街 Global 超分背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
 
 商街最后一帧同范围对照：
 

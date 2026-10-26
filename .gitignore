@@ -5,4 +5,7 @@ __pycache__/
 .venv/
 build/
 dist/
-models/
+models/*
+!models/FSRCNN_x4.pb
+!models/FSRCNN_LICENSE.txt
+!models/README.md
