@@ -70,7 +70,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI Frame 6000 上的各自运动掩膜 |
 | `output/three_region/region_*_mask.png` | 三个互斥最终区域的二值掩膜 |
 | `output/three_region/summary.json` | 输入模式、单应矩阵、像素计数 |
-| `output/benchmark/metrics.json` | SIFT/纯点线 H/RAFT 静态区共同像素的指标 |
+| `output/benchmark/metrics.json` | 全 ROI 完整融合结果指标及静态共同区参考指标 |
 | `output/benchmark/all_region_error_heatmaps.jpg` | 样例 ROI 全部像素相对 Global 输入的平均 RGB 绝对差热图 |
 
 ### 商街人群 · `20220806141041707_cam11`
@@ -125,7 +125,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 评测协议与边界
 
-三个场景的纯点线输出均用本仓库 `image-stitch` 对**Frame 6000**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效且 Local/Global 都判静态的像素，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global Frame 6000 的 PSNR/SSIM。该数值评测仍针对静态共同区；上面的全区域热图则覆盖样例 ROI 内全部像素。运行：
+三个场景的纯点线输出均用本仓库 `image-stitch` 对**Frame 6000**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。全 ROI 评测使用三种完整融合结果，在同一 Global Frame 6000 参考图上统计样例 ROI 内全部像素；静态共同区指标另列作参考。运行：
 
 ```bash
 python -m pip install -e '.[benchmark]'
@@ -134,13 +134,23 @@ python scripts/evaluate_three_region.py --example examples/three_region_stitch/2
 python scripts/evaluate_three_region.py --example examples/three_region_stitch/20220601174105159_cam11
 ```
 
-| 场景 | 共同静态像素 | SIFT + RANSAC | 纯点线 H | RAFT 静态区 |
+| 场景 | 全 ROI 像素 | SIFT + RANSAC | 纯点线 H | 三分区域最终结果 |
+| --- | ---: | ---: | ---: | ---: |
+| 商街人群 | 236,880 | 15.710 dB / 0.4889 | 15.696 dB / 0.5037 | **17.025 dB / 0.5824** |
+| 城市道路 | 236,880 | 19.592 dB / 0.6224 | 18.744 dB / 0.5516 | **20.466 dB / 0.6530** |
+| 运动场人群 | 234,848 | 14.898 dB / 0.5093 | 14.860 dB / 0.4903 | **16.198 dB / 0.6596** |
+
+这些全 ROI 数值表示完整结果与 Global 输入的相似程度，不是有真值的拼接质量分数；三分区域结果中由 Global 保留的像素与参照相同，会影响得分。
+
+静态共同区域参考指标沿用三种方法共同有效、且 Local/Global 均判静态的像素，并向内腐蚀 3 px：
+
+| 场景 | 静态共同像素 | SIFT + RANSAC | 纯点线 H | RAFT 静态区 |
 | --- | ---: | ---: | ---: | ---: |
 | 商街人群 | 75,041 | 16.173 dB / 0.4679 | 16.513 dB / 0.5105 | 18.077 dB / 0.6347 |
 | 城市道路 | 99,302 | 18.819 dB / 0.6133 | 17.572 dB / 0.4989 | 20.288 dB / 0.6899 |
 | 运动场人群 | 67,281 | 17.273 dB / 0.5398 | 17.038 dB / 0.5069 | 17.406 dB / 0.4880 |
 
-这个诊断只回答“静态重叠像素与 Global 对得怎样”。两相机曝光、遮挡和视角不同，指标本身也会受影响；运动区域没有无遮挡的真值，不能用这些数字评价运动目标的融合质量。[UDIS2 官方仓库](https://github.com/nie-lang/UDIS2)所用的 UDIS-D 是静态图像对数据集，与这里的双视角时序掩膜设置不同，因此没有把本结果写成 UDIS-D 榜单分数。单应性在存在视差和动态物体时可能产生重影，这也是三分区尝试解决的问题；背景参考见[APAP 项目页](https://cs.adelaide.edu.au/~tjchin/apap/)。
+[UDIS2 官方仓库](https://github.com/nie-lang/UDIS2)所用的 UDIS-D 是静态图像对数据集，与这里的双视角时序掩膜设置不同，因此没有把本结果写成 UDIS-D 榜单分数。单应性在存在视差和动态物体时可能产生重影，这也是三分区尝试解决的问题；背景参考见[APAP 项目页](https://cs.adelaide.edu.au/~tjchin/apap/)。
 
 ## 数据导出
 

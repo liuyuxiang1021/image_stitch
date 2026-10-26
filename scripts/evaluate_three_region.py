@@ -1,7 +1,7 @@
-"""Compare image-stitch, SIFT/RANSAC, and RAFT on the same static pixels.
+"""Compare full composites over the ROI and report static-overlap metrics.
 
 This is a small diagnostic on the included videos, not an official UDIS-D
-benchmark. No ground-truth panorama exists for these cross-view frames.
+benchmark. The Global frame is the reference; no ground-truth panorama exists.
 """
 
 from __future__ import annotations
@@ -59,17 +59,6 @@ def warp_with_valid(local: np.ndarray, h: np.ndarray, size: tuple[int, int]):
     return warped, valid
 
 
-def feather(local_warp: np.ndarray, global_frame: np.ndarray,
-            local_valid: np.ndarray, width: int = 32) -> np.ndarray:
-    padded = cv.copyMakeBorder(local_valid, 1, 1, 1, 1, cv.BORDER_CONSTANT, value=0)
-    distance = cv.distanceTransform(padded, cv.DIST_L2, 5)[1:-1, 1:-1]
-    alpha = np.clip(distance / width, 0, 1)[..., None]
-    return np.clip(
-        local_warp.astype(np.float32) * alpha
-        + global_frame.astype(np.float32) * (1 - alpha), 0, 255,
-    ).astype(np.uint8)
-
-
 def masked_metrics(reference: np.ndarray, candidate: np.ndarray, mask: np.ndarray) -> dict:
     squared = (reference.astype(np.float32) - candidate.astype(np.float32)) ** 2
     mse = float(np.mean(squared[mask]))
@@ -79,6 +68,21 @@ def masked_metrics(reference: np.ndarray, candidate: np.ndarray, mask: np.ndarra
     )
     ssim = float(np.mean(map_ssim.mean(axis=2)[mask]))
     return {"psnr_db": round(psnr, 3), "ssim": round(ssim, 4)}
+
+
+def roi_metrics(
+    reference: np.ndarray,
+    candidate: np.ndarray,
+    roi: tuple[int, int, int, int],
+) -> dict:
+    x0, y0, x1, y1 = roi
+    reference_crop = reference[y0:y1, x0:x1]
+    candidate_crop = candidate[y0:y1, x0:x1]
+    return masked_metrics(
+        reference_crop,
+        candidate_crop,
+        np.ones(reference_crop.shape[:2], dtype=bool),
+    )
 
 
 def error_heatmap_comparison(
@@ -141,10 +145,30 @@ def main() -> None:
     common = cv.erode(common, cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))) > 0
     if np.count_nonzero(common) < 100:
         raise RuntimeError("Too few jointly valid static pixels for this evaluation")
+    feather_radius = int(three_summary.get("feather_radius", 2))
+    pure_result = compose_homography_over_background(
+        global_frame, local, h_pure, feather_radius,
+    )
+    sift_result = compose_homography_over_background(
+        global_frame, local, h_sift, feather_radius,
+    )
+    three_result = read(three_output / "final_result.jpg")
+    all_roi_pixels = (roi[2] - roi[0]) * (roi[3] - roi[1])
     metrics = {
         "scene": manifest["scene"],
+        "all_roi_pixels": all_roi_pixels,
+        "all_roi_protocol": "Compare full composites to Global on every pixel in the sample ROI; all methods use the same feather radius.",
+        "all_roi_methods": {
+            "SIFT_RANSAC_H": {
+                **roi_metrics(global_frame, sift_result, roi),
+                "ratio_test_matches": sift_matches,
+                "ransac_inliers": sift_inliers,
+            },
+            "OmniGlue_LineTR_H": roi_metrics(global_frame, pure_result, roi),
+            "three_region_final": roi_metrics(global_frame, three_result, roi),
+        },
         "static_common_pixels": int(np.count_nonzero(common)),
-        "static_overlap_protocol": "intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px",
+        "static_overlap_protocol": "Intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px.",
         "methods": {
             "SIFT_RANSAC_H": {
                 **masked_metrics(global_frame, sift_warp, common),
@@ -154,14 +178,12 @@ def main() -> None:
             "OmniGlue_LineTR_H": masked_metrics(global_frame, pure_warp, common),
             "motion_H_plus_RAFT_static": masked_metrics(global_frame, raft_warped, common),
         },
-        "interpretation_limit": "Static-overlap alignment only; no ground-truth panorama or motion-region perceptual quality score.",
+        "interpretation_limit": "All-ROI scores are similarity to the Global reference, not ground-truth quality; retained Global pixels in the three-region output match that reference by construction. Static metrics remain available separately.",
     }
     benchmark_dir = example / "output/benchmark"
     benchmark_dir.mkdir(parents=True, exist_ok=True)
-    sift_result = feather(sift_warp, global_frame, sift_valid)
     cv.imwrite(str(benchmark_dir / "sift_ransac_stitch.jpg"), sift_result,
                [cv.IMWRITE_JPEG_QUALITY, 95])
-    three_result = read(three_output / "final_result.jpg")
     cv.imwrite(str(benchmark_dir / "sift_vs_three_focus.jpg"),
                compare_same_crop(
                    sift_result, three_result, roi,
@@ -169,10 +191,6 @@ def main() -> None:
                ),
                [cv.IMWRITE_JPEG_QUALITY, 95])
     cv.imwrite(str(benchmark_dir / "static_common_mask.png"), common.astype(np.uint8) * 255)
-    pure_result = compose_homography_over_background(
-        global_frame, local, h_pure, feather_radius=int(three_summary.get("feather_radius", 2)),
-    )
-    three_result = read(three_output / "final_result.jpg")
     cv.imwrite(
         str(benchmark_dir / "all_region_error_heatmaps.jpg"),
         error_heatmap_comparison(global_frame, pure_result, three_result, roi),

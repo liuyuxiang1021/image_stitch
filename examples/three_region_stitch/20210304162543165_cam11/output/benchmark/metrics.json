@@ -1,7 +1,25 @@
 {
   "scene": "20210304162543165",
+  "all_roi_pixels": 236880,
+  "all_roi_protocol": "Compare full composites to Global on every pixel in the sample ROI; all methods use the same feather radius.",
+  "all_roi_methods": {
+    "SIFT_RANSAC_H": {
+      "psnr_db": 19.592,
+      "ssim": 0.6224,
+      "ratio_test_matches": 285,
+      "ransac_inliers": 262
+    },
+    "OmniGlue_LineTR_H": {
+      "psnr_db": 18.744,
+      "ssim": 0.5516
+    },
+    "three_region_final": {
+      "psnr_db": 20.466,
+      "ssim": 0.653
+    }
+  },
   "static_common_pixels": 99302,
-  "static_overlap_protocol": "intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px",
+  "static_overlap_protocol": "Intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px.",
   "methods": {
     "SIFT_RANSAC_H": {
       "psnr_db": 18.819,
@@ -18,5 +36,5 @@
       "ssim": 0.6899
     }
   },
-  "interpretation_limit": "Static-overlap alignment only; no ground-truth panorama or motion-region perceptual quality score."
+  "interpretation_limit": "All-ROI scores are similarity to the Global reference, not ground-truth quality; retained Global pixels in the three-region output match that reference by construction. Static metrics remain available separately."
 }

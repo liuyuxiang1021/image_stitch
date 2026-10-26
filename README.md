@@ -91,15 +91,15 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 同场景小规模评测
 
-用各场景的 Frame 6000 和对应 `H_init` 运行纯 OmniGlue + LineTR 单应性拼接、OpenCV SIFT + RANSAC 单应性，以及运动区单应性 + RAFT 静态区。只在三种方法共同有效、且双视角均判为静态的像素上，计算与 Global Frame 6000 的 PSNR/SSIM；这衡量**静态重叠区对齐**，不等于整图视觉质量，也不是公开数据集的官方排名。
+用各场景的 Frame 6000 和对应 `H_init` 运行纯 OmniGlue + LineTR、OpenCV SIFT + RANSAC，以及三分区域融合。全 ROI 评测比较三种完整融合结果与 Global Frame 6000，覆盖 ROI 内全部像素；静态共同区指标另列作参考。
 
-表内数值仍按共同静态区域统计；上方热图则覆盖样例 ROI 内全部像素，展示完整拼接结果相对 Global 输入的差异。
+全 ROI 的 PSNR/SSIM 表示结果与 Global 输入的相似程度，不是有真值的拼接质量分数。三分区域结果中由 Global 保留的像素与参照相同，因此会影响全 ROI 得分。
 
-| 场景 | SIFT + RANSAC | 纯点线 H | 三分区域的 RAFT 静态区 |
-| --- | --- | --- | --- |
-| 商街人群 | 16.17 dB / 0.468 | 16.51 dB / 0.511 | **18.08 dB / 0.635** |
+| 场景 | 全 ROI 像素 | SIFT + RANSAC | 纯点线 H | 三分区域最终结果 |
+| --- | ---: | ---: | ---: | ---: |
+| 商街人群 | 236,880 | 15.710 dB / 0.4889 | 15.696 dB / 0.5037 | **17.025 dB / 0.5824** |
 
-表内数值由[`scripts/evaluate_three_region.py`](scripts/evaluate_three_region.py)生成；像素数、匹配数、SIFT 输出和精确数值见该样例的 `output/benchmark/`。运动目标没有无遮挡的真值，不能从这些静态区指标推断其融合质量；请同时查看并排图和区域图。
+静态共同区域参考值仍保留在 [`metrics.json`](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/metrics.json)：75,041 像素上，SIFT + RANSAC 为 16.173 dB / 0.4679，纯点线 H 为 16.513 dB / 0.5105，RAFT 静态区为 18.077 dB / 0.6347。各场景完整数值见对应样例的 `output/benchmark/metrics.json`。
 
 ## 仓库结构
 
