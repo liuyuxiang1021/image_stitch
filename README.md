@@ -5,7 +5,7 @@
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
 | [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性并羽化拼接 | 运动场、展厅、校园道路各一组图像 |
-| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 商街人群、车流、运动场人群各 200 帧双视角短视频 |
+| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 商街人群双视角 200 帧短视频 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
 ## 1. 纯点线单应性拼接
@@ -32,7 +32,7 @@
 | 蓝色 | 其余有效重叠区域，且 RAFT 前后向一致性检查通过 | 使用 RAFT 对齐后的 Local |
 | 绿色 | 不属于上述两区，或 Local 投影/RAFT 对齐无效 | 保留 Global |
 
-下面三组样例的 Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
+当前展示这一组商街样例。Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
 ### 商街人群 `20220806141041707_cam11`
 
@@ -46,30 +46,6 @@
 
 ![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
 
-### 城市道路 `20210304162543165_cam11`
-
-| Local 最后一帧 | Global 最后一帧 |
-| --- | --- |
-| ![道路 Local](examples/three_region_stitch/20210304162543165_cam11/input/local.jpg) | ![道路 Global](examples/three_region_stitch/20210304162543165_cam11/input/global.jpg) |
-
-![道路三分区域叠加于 Global](examples/three_region_stitch/20210304162543165_cam11/output/three_region/region_overlay_on_global.jpg)
-
-![道路同范围纯拼接和三分区域对照](examples/three_region_stitch/20210304162543165_cam11/output/three_region/comparison_focus.jpg)
-
-![道路静态共同区域误差热图](examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
-
-### 运动场人群 `20220601174105159_cam11`
-
-| Local 最后一帧 | Global 最后一帧 |
-| --- | --- |
-| ![运动场 Local](examples/three_region_stitch/20220601174105159_cam11/input/local.jpg) | ![运动场 Global](examples/three_region_stitch/20220601174105159_cam11/input/global.jpg) |
-
-![运动场三分区域叠加于 Global](examples/three_region_stitch/20220601174105159_cam11/output/three_region/region_overlay_on_global.jpg)
-
-![运动场同范围纯拼接和三分区域对照](examples/three_region_stitch/20220601174105159_cam11/output/three_region/comparison_focus.jpg)
-
-![运动场静态共同区域误差热图](examples/three_region_stitch/20220601174105159_cam11/output/benchmark/static_error_heatmaps.jpg)
-
 ## 快速运行
 
 在 Python 3.10–3.12 环境中安装基础包，然后先运行不需下载模型的缓存复现。仓库内缓存的是上述真实视频运行得到的运动掩膜、点线精修矩阵和 RAFT 对齐结果；程序会重新完成三区归属和融合。
@@ -79,11 +55,9 @@ git clone --recursive https://github.com/liuyuxiang1021/image_stitch.git
 cd image_stitch
 python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
-three-region-stitch --example examples/three_region_stitch/20210304162543165_cam11
-three-region-stitch --example examples/three_region_stitch/20220601174105159_cam11
 ```
 
-输出在每个样例的 `output/three_region/`：`final_result.jpg` 是无标注最终融合图，`region_overlay_on_global.jpg` 是区域归属，`comparison_focus.jpg` 是同一 ROI 的纯拼接/三分区域并排图，`summary.json` 记录矩阵、运行模式与像素数。可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜；完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
+输出在该样例的 `output/three_region/`：`final_result.jpg` 是无标注最终融合图，`region_overlay_on_global.jpg` 是区域归属，`comparison_focus.jpg` 是同一 ROI 的纯拼接/三分区域并排图，`summary.json` 记录矩阵、运行模式与像素数。可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜；完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
 
 ## 同场景小规模评测
 
@@ -92,10 +66,8 @@ three-region-stitch --example examples/three_region_stitch/20220601174105159_cam
 | 场景 | SIFT + RANSAC | 纯点线 H | 三分区域的 RAFT 静态区 |
 | --- | --- | --- | --- |
 | 商街人群 | 16.54 dB / 0.528 | 16.75 dB / 0.550 | **18.24 dB / 0.670** |
-| 城市道路 | 19.60 dB / 0.664 | 17.75 dB / 0.511 | **20.67 dB / 0.715** |
-| 运动场人群 | 18.11 dB / 0.547 | 17.85 dB / 0.512 | **18.50 dB / 0.551** |
 
-表内数值由[`scripts/evaluate_three_region.py`](scripts/evaluate_three_region.py)生成；逐场景像素数、匹配数、SIFT 输出和精确数值见各样例的 `output/benchmark/`。道路场景中 SIFT 静态区指标高于纯点线 H，结果照实保留。运动目标没有无遮挡的真值，不能从表格推断其质量；请同时查看并排图和区域图。
+表内数值由[`scripts/evaluate_three_region.py`](scripts/evaluate_three_region.py)生成；像素数、匹配数、SIFT 输出和精确数值见该样例的 `output/benchmark/`。运动目标没有无遮挡的真值，不能从这些静态区指标推断其融合质量；请同时查看并排图和区域图。
 
 ## 仓库结构
 
