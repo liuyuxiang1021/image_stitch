@@ -21,44 +21,59 @@
   "flow_mode": "cached",
   "one_sided_to_raft": true,
   "feather_radius": 2,
+  "super_resolution": {
+    "mode": "global-fsrcnn",
+    "model": "models/FSRCNN_x4.pb",
+    "scale": 4,
+    "tile_size": 512,
+    "tile_overlap": 24,
+    "background": "output/three_region/global_background_fsrcnn_x4.jpg",
+    "final_result": "output/three_region/final_result_global_fsrcnn_x4.jpg",
+    "region_overlay": "output/three_region/region_overlay_on_global_fsrcnn_x4.jpg",
+    "output_shape": [
+      3144,
+      4280,
+      3
+    ]
+  },
   "H_init": [
     [
-      0.37285810302978417,
-      0.008740743149116487,
+      0.18642905151489209,
+      0.0043703715745582435,
       176.70405822953106
     ],
     [
-      0.006488337497113956,
-      0.3479837342108047,
+      0.003244168748556978,
+      0.17399186710540235,
       204.6855367189129
     ],
     [
-      2.3882540780477825e-05,
-      5.923009512124339e-06,
+      1.1941270390238912e-05,
+      2.9615047560621695e-06,
       1.0371615133569454
     ]
   ],
   "H_final": [
     [
-      0.35275571124893607,
-      0.004338844970340917,
-      224.91239781624765
+      0.17586965313552694,
+      0.0018650906540485191,
+      225.12616393447217
     ],
     [
-      0.008791243363178262,
-      0.3230010290062764,
-      224.73693753174516
+      0.004193915143030903,
+      0.16119136198302028,
+      224.7567765350568
     ],
     [
-      2.4278572631804025e-05,
-      -1.38955459250253e-06,
-      1.0243716816401527
+      1.156713509630335e-05,
+      -5.400688037411506e-07,
+      1.0236642482686986
     ]
   ],
   "region_pixels": {
-    "global": 634716,
-    "raft": 124303,
-    "motion": 82001
+    "global": 634628,
+    "raft": 124392,
+    "motion": 82000
   },
   "comparison_focus": "output/three_region/comparison_focus.jpg"
 }

@@ -1,21 +1,21 @@
 {
   "scene": "20220601174105159",
-  "static_common_pixels": 91812,
+  "static_common_pixels": 67281,
   "static_overlap_protocol": "intersection of non-motion Local/Global and valid pixels from all methods, eroded by 3 px",
   "methods": {
     "SIFT_RANSAC_H": {
-      "psnr_db": 18.111,
-      "ssim": 0.5468,
-      "ratio_test_matches": 218,
-      "ransac_inliers": 198
+      "psnr_db": 17.273,
+      "ssim": 0.5398,
+      "ratio_test_matches": 172,
+      "ransac_inliers": 143
     },
     "OmniGlue_LineTR_H": {
-      "psnr_db": 17.85,
-      "ssim": 0.5115
+      "psnr_db": 17.038,
+      "ssim": 0.5069
     },
     "motion_H_plus_RAFT_static": {
-      "psnr_db": 18.499,
-      "ssim": 0.5508
+      "psnr_db": 17.406,
+      "ssim": 0.488
     }
   },
   "interpretation_limit": "Static-overlap alignment only; no ground-truth panorama or motion-region perceptual quality score."

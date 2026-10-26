@@ -8,7 +8,7 @@
   ],
   "frame_count": 200,
   "video_fps": 25,
-  "local_scale_from_original": 0.5,
+  "local_scale_from_original": 1.0,
   "global_display_crop_original_xyxy": [
     252,
     432,

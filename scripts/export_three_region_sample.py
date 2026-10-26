@@ -58,7 +58,10 @@ def main() -> None:
     parser.add_argument("--start-frame", type=int, default=5801)
     parser.add_argument("--crop", type=int, nargs=4, default=(252, 432, 1322, 1218),
                         metavar=("X0", "Y0", "X1", "Y1"))
-    parser.add_argument("--local-scale", type=float, default=0.5)
+    parser.add_argument(
+        "--local-scale", type=float, default=1.0,
+        help="scale for the saved Local frame; defaults to its original 3840x2160 resolution",
+    )
     parser.add_argument(
         "--ffmpeg", default="/usr/bin/ffmpeg" if Path("/usr/bin/ffmpeg").exists() else "ffmpeg",
         help="FFmpeg binary with libx264 support",
