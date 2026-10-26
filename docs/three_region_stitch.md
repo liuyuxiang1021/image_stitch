@@ -63,8 +63,8 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | `output/pure_stitch.jpg` | 同一 Local/Global Frame 6000 的完整纯点线 H 拼接对照 |
 | `output/three_region/final_result.jpg` | 原画布分辨率的三分区域融合图，用于诊断和指标计算 |
-| `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果 |
-| `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上叠红/蓝/绿三区 |
+| `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果，三区边界半径 8 px 羽化 |
+| `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上的红/蓝/绿区域归属可视化，保留清晰边界以便识别 |
 | `output/three_region/global_background_fsrcnn_x4.jpg` | FSRCNN x4 处理后的 Global 背景 |
 | `output/three_region/comparison_focus.jpg` | 同一个 ROI：左纯点线 H，右三分区域 |
 | `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI Frame 6000 上的各自运动掩膜 |

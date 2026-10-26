@@ -54,17 +54,17 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 左图是 3840 × 2160 的 Local 原始输入。右图是算法实际使用的 Global 输入图，已去畸变并裁剪为 1070 × 786。两张图按相同显示宽度排版，高度按各自的原始宽高比显示。
 
-**三区区域归属图**：叠加在 FSRCNN x4 放大的 Global 背景上。红色表示双视角运动掩膜交集且 Local 投影有效的区域，使用单应性；蓝色表示红区之外进入 RAFT 候选、且前后向一致性检查通过的 Local 区域；绿色表示保留 Global 背景的区域。
+**三区区域归属图与最终融合结果**：两张图都基于 FSRCNN x4 放大的 Global 背景。左图用红、蓝、绿显示单应性区、RAFT 区和 Global 保留区；右图是实际融合结果。
 
-![商街三区叠加于 Global 超分背景](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
+| 三区区域归属图（硬掩膜可视化） | 最终高分辨率融合结果（边界羽化） |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg" width="480" alt="商街三区区域归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg" width="480" alt="商街最终高分辨率融合结果"> |
+
+左图的颜色表示区域归属，边缘保持清晰以便辨认。右图在三块区域的交界处做高斯权重羽化：原画布半径为 2 px，x4 输出中对应 8 px。
 
 **同一局部的拼接方法对照**：左图是纯点线单应性拼接并做边缘羽化，右图是三分区域融合；两边显示相同 ROI。
 
 ![商街同范围纯拼接和三分区域对照](examples/three_region_stitch/20220806141041707_cam11/output/three_region/comparison_focus.jpg)
-
-**最终高分辨率融合结果**：以 FSRCNN x4 处理后的 Global 为背景，再按三区归属合入 Local 的单应性区域和 RAFT 区域；绿色区域保留 Global。
-
-![商街 Global 超分背景上的最终三分区域融合结果](examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
 
 **静态共同区域误差热图**：比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差。蓝色误差较小，红色误差较大，黑色表示不在共同静态评测区域内；它用于观察静态区对齐，不是融合结果图。
 
