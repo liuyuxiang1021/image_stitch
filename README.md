@@ -52,19 +52,21 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local Frame 6000"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global input/global.jpg Frame 6000"> |
 
-左图是 3840 × 2160 的 Local 原始输入。右图是算法实际使用的 Global 输入图，已去畸变并裁剪为 1070 × 786。两张图按相同显示宽度排版，高度按各自的原始宽高比显示。
+左图是 3840 × 2160 的 Local 原始输入。右图是算法实际使用的 Global 输入图，已去畸变并裁剪为 1070 × 786。
 
-**三区区域归属图（硬掩膜可视化）**：叠加在 FSRCNN x4 放大的 Global 背景上。红色是双视角运动掩膜交集内有效的单应性区，蓝色是红区外通过 RAFT 检查的区域，绿色保留 Global；边缘保持清晰，便于辨认。
+**三区区域归属图与最终融合结果**：下面两张图并列展示。区域图采用硬掩膜颜色，便于辨认区域边界；最终图以 FSRCNN x4 Global 为背景，合入 Local 内容，并在区域边界以原画布 2 px（x4 输出 8 px）半径羽化。
 
-![商街三区区域归属图](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
+| 三区区域归属图 | 最终高分辨率融合结果 |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg" width="480" alt="商街三区区域归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg" width="480" alt="商街最终高分辨率融合结果"> |
 
-**最终高分辨率融合结果（边界羽化）**：以 FSRCNN x4 放大的 Global 为背景，按三区归属合入 Local 内容；在三块区域交界处做高斯权重羽化，原画布半径为 2 px，x4 输出中对应 8 px。
+区域颜色：红色是双视角运动掩膜交集内有效的单应性区；蓝色是红区外通过 RAFT 检查的区域；绿色保留 Global。
 
-![商街最终高分辨率融合结果](examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
+**同一 ROI 的拼接方法对照**：两张图分别展示纯点线单应性拼接（左）和三分区域融合（右），使用相同 ROI，保持为独立图片。
 
-**同一 ROI 的拼接方法对照**：左边是纯点线单应性拼接并做边缘羽化，右边是三分区域融合；两边展示相同区域。
-
-![商街同范围纯拼接和三分区域对照](examples/three_region_stitch/20220806141041707_cam11/output/three_region/comparison_focus.jpg)
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg" width="480" alt="商街纯点线拼接 ROI"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg" width="480" alt="商街三分区域融合 ROI"> |
 
 **静态共同区域误差热图**：比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差。蓝色误差较小，红色误差较大，黑色表示不在共同静态评测区域内；它用于观察静态区对齐，不是融合结果图。
 
@@ -81,7 +83,7 @@ python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 ```
 
-输出在该样例的 `output/three_region/`：`final_result.jpg` 是原画布分辨率融合结果，`final_result_global_fsrcnn_x4.jpg` 是 Global 背景经 FSRCNN x4 后再合入 Local 区域的高分辨率结果，`region_overlay_on_global_fsrcnn_x4.jpg` 展示同一高分辨率背景上的区域归属，`comparison_focus.jpg` 是原画布分辨率下同一 ROI 的纯拼接/三分区域对照，`summary.json` 记录矩阵、运行模式与像素数。可用 `--sr-mode none` 跳过超分；可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
+输出在该样例的 `output/three_region/`：`final_result.jpg` 是原画布分辨率融合结果，`final_result_global_fsrcnn_x4.jpg` 是 Global 背景经 FSRCNN x4 后再合入 Local 区域的高分辨率结果，`region_overlay_on_global_fsrcnn_x4.jpg` 展示同一高分辨率背景上的区域归属，`pure_stitch_focus.jpg` 与 `three_region_focus.jpg` 是同一 ROI 的两张独立对照图，`summary.json` 记录矩阵、运行模式与像素数。可用 `--sr-mode none` 跳过超分；可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
 
 ## 同场景小规模评测
 

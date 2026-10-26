@@ -35,12 +35,12 @@ def focus_bbox(roi: tuple[int, int, int, int], shape: tuple[int, int, int], padd
     )
 
 
-def compare_same_crop(
+def same_crop_panels(
     pure: np.ndarray,
     three_region: np.ndarray,
     roi: tuple[int, int, int, int],
     titles: tuple[str, str] = ("Point-line H + feather", "Motion + RAFT + Global"),
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     if pure.shape != three_region.shape:
         raise ValueError("Comparison images must be on the same Global canvas")
     x0, y0, x1, y1 = focus_bbox(roi, pure.shape)
@@ -53,4 +53,14 @@ def compare_same_crop(
         cv.putText(panel, title, (10, 25), cv.FONT_HERSHEY_SIMPLEX,
                    0.65, (255, 255, 255), 2, cv.LINE_AA)
         panels.append(panel)
-    return np.hstack(panels)
+    return panels[0], panels[1]
+
+
+def compare_same_crop(
+    pure: np.ndarray,
+    three_region: np.ndarray,
+    roi: tuple[int, int, int, int],
+    titles: tuple[str, str] = ("Point-line H + feather", "Motion + RAFT + Global"),
+) -> np.ndarray:
+    """Return a side-by-side panel for benchmark visualizations."""
+    return np.hstack(same_crop_panels(pure, three_region, roi, titles))

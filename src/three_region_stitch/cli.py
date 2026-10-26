@@ -17,7 +17,7 @@ from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
 from .regions import compose_three_regions, compose_with_global_sr, prepare_regions
 from .super_resolution import FSRCNNX4, sharpen_for_display
-from .visualization import compare_same_crop, region_overlay, tint
+from .visualization import region_overlay, same_crop_panels, tint
 
 
 def _read_image(path: Path, flags: int = cv.IMREAD_COLOR) -> np.ndarray:
@@ -204,11 +204,18 @@ def main(argv=None) -> int:
     _write_image(output / "local_global_motion_masks.jpg", motion_panel)
 
     pure_path = args.pure_output or example / "output" / "pure_stitch.jpg"
-    comparison_path = None
+    comparison_paths = None
     if pure_path.is_file():
         pure = _pure_on_global_canvas(pure_path, global_frame.shape)
-        comparison_path = output / "comparison_focus.jpg"
-        _write_image(comparison_path, compare_same_crop(pure, composed.image, roi))
+        pure_focus, three_region_focus = same_crop_panels(pure, composed.image, roi)
+        pure_focus_path = output / "pure_stitch_focus.jpg"
+        three_region_focus_path = output / "three_region_focus.jpg"
+        _write_image(pure_focus_path, pure_focus)
+        _write_image(three_region_focus_path, three_region_focus)
+        comparison_paths = {
+            "pure_stitch": str(pure_focus_path.relative_to(example)),
+            "three_region": str(three_region_focus_path.relative_to(example)),
+        }
 
     sr_info = {"mode": args.sr_mode}
     if args.sr_mode == "global-fsrcnn":
@@ -263,9 +270,7 @@ def main(argv=None) -> int:
             "raft": int(np.count_nonzero(composed.regions.raft_region)),
             "motion": int(np.count_nonzero(composed.regions.homography_region)),
         },
-        "comparison_focus": (
-            str(comparison_path.relative_to(example)) if comparison_path else None
-        ),
+        "comparison_images": comparison_paths,
     }
     (output / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",

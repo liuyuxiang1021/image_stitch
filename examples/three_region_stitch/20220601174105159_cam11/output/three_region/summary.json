@@ -75,5 +75,8 @@
     "raft": 75112,
     "motion": 42514
   },
-  "comparison_focus": "output/three_region/comparison_focus.jpg"
+  "comparison_images": {
+    "pure_stitch": "output/three_region/pure_stitch_focus.jpg",
+    "three_region": "output/three_region/three_region_focus.jpg"
+  }
 }
