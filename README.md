@@ -50,7 +50,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 | Local 最后一帧（全幅） | Global 最后一帧（16:9 展示裁剪） |
 | --- | --- |
-| ![商街 Local](examples/three_region_stitch/20220806141041707_cam11/input/local.jpg) | ![商街 Global 展示裁剪](examples/three_region_stitch/20220806141041707_cam11/preview/global_input_16_9.jpg) |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local"> | <img src="examples/three_region_stitch/20220806141041707_cam11/preview/global_input_16_9.jpg" width="480" alt="商街 Global 展示裁剪"> |
 
 ![商街三区叠加于 Global 超分背景](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
 
