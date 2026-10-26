@@ -76,7 +76,7 @@
     "motion": 82000
   },
   "comparison_images": {
-    "pure_stitch": "output/three_region/pure_stitch_focus.jpg",
-    "three_region": "output/three_region/three_region_focus.jpg"
+    "pure_stitch": "output/three_region/pure_stitch_global_fsrcnn_x4.jpg",
+    "three_region": "output/three_region/final_result_global_fsrcnn_x4.jpg"
   }
 }

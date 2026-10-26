@@ -15,7 +15,7 @@ import numpy as np
 from skimage.metrics import structural_similarity
 
 from image_stitch import load_homography
-from three_region_stitch.regions import prepare_regions
+from three_region_stitch.regions import compose_homography_over_background, prepare_regions
 from three_region_stitch.visualization import compare_same_crop
 
 
@@ -84,24 +84,22 @@ def masked_metrics(reference: np.ndarray, candidate: np.ndarray, mask: np.ndarra
 def error_heatmap_comparison(
     reference: np.ndarray,
     pure: np.ndarray,
-    raft: np.ndarray,
-    mask: np.ndarray,
+    three_region: np.ndarray,
     roi: tuple[int, int, int, int],
 ) -> np.ndarray:
-    """Same-scale per-pixel RGB error on the jointly valid static area."""
+    """Same-scale RGB error against Global over every pixel in the sample ROI."""
     x0, y0, x1, y1 = roi
     panels = []
-    for label, candidate in (("Point-line H", pure), ("RAFT static", raft)):
+    for label, candidate in (("Pure point-line stitch", pure), ("Three-region result", three_region)):
         error = np.abs(reference.astype(np.float32) - candidate.astype(np.float32)).mean(2)
         normalized = (np.clip(error[y0:y1, x0:x1], 0, 80) * 255 / 80).astype(np.uint8)
         colored = cv.applyColorMap(normalized, cv.COLORMAP_TURBO)
-        colored[~mask[y0:y1, x0:x1]] = 0
         header = np.zeros((40, x1 - x0, 3), np.uint8)
         cv.putText(header, label, (10, 27), cv.FONT_HERSHEY_SIMPLEX,
                    0.75, (255, 255, 255), 2, cv.LINE_AA)
         panels.append(np.vstack((header, colored)))
     footer = np.zeros((30, 2 * (x1 - x0), 3), np.uint8)
-    cv.putText(footer, "Mean absolute RGB error vs Global: blue=0, red>=80; black=outside common static mask",
+    cv.putText(footer, "Mean absolute RGB error vs Global over all ROI pixels: blue=0, red>=80",
                (10, 22), cv.FONT_HERSHEY_SIMPLEX, 0.48,
                (255, 255, 255), 1, cv.LINE_AA)
     return np.vstack((np.hstack(panels), footer))
@@ -171,9 +169,13 @@ def main() -> None:
                ),
                [cv.IMWRITE_JPEG_QUALITY, 95])
     cv.imwrite(str(benchmark_dir / "static_common_mask.png"), common.astype(np.uint8) * 255)
+    pure_result = compose_homography_over_background(
+        global_frame, local, h_pure, feather_radius=int(three_summary.get("feather_radius", 2)),
+    )
+    three_result = read(three_output / "final_result.jpg")
     cv.imwrite(
-        str(benchmark_dir / "static_error_heatmaps.jpg"),
-        error_heatmap_comparison(global_frame, pure_warp, raft_warped, common, roi),
+        str(benchmark_dir / "all_region_error_heatmaps.jpg"),
+        error_heatmap_comparison(global_frame, pure_result, three_result, roi),
         [cv.IMWRITE_JPEG_QUALITY, 95],
     )
     (benchmark_dir / "metrics.json").write_text(

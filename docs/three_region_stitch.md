@@ -66,13 +66,12 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果，三区边界半径 8 px 羽化 |
 | `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上的红/蓝/绿区域归属可视化，保留清晰边界以便识别 |
 | `output/three_region/global_background_fsrcnn_x4.jpg` | FSRCNN x4 处理后的 Global 背景 |
-| `output/three_region/pure_stitch_focus.jpg` | 同一 ROI 的纯点线单应性拼接局部图 |
-| `output/three_region/three_region_focus.jpg` | 同一 ROI 的三分区域融合局部图，与纯点线图分开保存 |
+| `output/three_region/pure_stitch_global_fsrcnn_x4.jpg` | 与三分区域结果同画布、同分辨率的纯点线单应性拼接结果 |
 | `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI Frame 6000 上的各自运动掩膜 |
 | `output/three_region/region_*_mask.png` | 三个互斥最终区域的二值掩膜 |
 | `output/three_region/summary.json` | 输入模式、单应矩阵、像素计数 |
 | `output/benchmark/metrics.json` | SIFT/纯点线 H/RAFT 静态区共同像素的指标 |
-| `output/benchmark/static_error_heatmaps.jpg` | 同一静态共同掩膜、同一误差色标下与 Global 参考帧的误差图 |
+| `output/benchmark/all_region_error_heatmaps.jpg` | 样例 ROI 全部像素相对 Global 输入的平均 RGB 绝对差热图 |
 
 ### 商街人群 · `20220806141041707_cam11`
 
@@ -84,43 +83,49 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 左图叠加在 FSRCNN x4 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x4 Global 为背景合入 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 8 px）。
 
-#### 同一 ROI 拼接对照
+#### 全画布拼接对照
 
-| 纯点线单应性拼接 | 三分区域融合 |
+| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
 | --- | --- |
-| ![商街纯点线拼接局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg) | ![商街三分区域融合局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg) |
+| ![商街纯点线拼接全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![商街三分区域融合全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
 
-#### 静态区域误差热图
+#### 全区域误差热图
 
-![商街静态共同区域误差](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
+![商街全区域误差](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/all_region_error_heatmaps.jpg)
 
-蓝色代表误差较小，红色代表误差较大，黑色表示不在共同静态评测区域内；两幅热图使用相同色标，用于观察纯点线单应性和 RAFT 静态区相对 Global 的对齐误差。
+热图覆盖样例 ROI 内全部像素，显示纯点线完整拼接结果和三分区域最终结果相对 Global 输入的平均 RGB 绝对差；蓝色较小，红色较大。
 
 ### 城市道路 · `20210304162543165_cam11`
 
-#### 同一 ROI 拼接对照
+#### 全画布拼接对照
 
-| 纯点线单应性拼接 | 三分区域融合 |
+| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
 | --- | --- |
-| ![道路纯点线拼接局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_focus.jpg) | ![道路三分区域融合局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/three_region_focus.jpg) |
+| ![道路纯点线拼接全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![道路三分区域融合全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
 
-#### 静态区域误差热图
+#### 全区域误差热图
 
-![道路静态共同区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
+![道路全区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/all_region_error_heatmaps.jpg)
 
-蓝色代表误差较小，红色代表误差较大，黑色表示不在共同静态评测区域内；热图用于观察纯点线单应性和 RAFT 静态区相对 Global 的对齐误差。
+热图覆盖样例 ROI 内全部像素，显示纯点线完整拼接结果和三分区域最终结果相对 Global 输入的平均 RGB 绝对差；蓝色较小，红色较大。
 
 ### 运动场人群 · `20220601174105159_cam11`
 
-#### 同一 ROI 拼接对照
+#### 全画布拼接对照
 
-| 纯点线单应性拼接 | 三分区域融合 |
+| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
 | --- | --- |
-| ![运动场纯点线拼接局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_focus.jpg) | ![运动场三分区域融合局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/three_region_focus.jpg) |
+| ![运动场纯点线拼接全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![运动场三分区域融合全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
+
+#### 全区域误差热图
+
+![运动场全区域误差](../examples/three_region_stitch/20220601174105159_cam11/output/benchmark/all_region_error_heatmaps.jpg)
+
+热图覆盖样例 ROI 内全部像素，显示纯点线完整拼接结果和三分区域最终结果相对 Global 输入的平均 RGB 绝对差；蓝色较小，红色较大。
 
 ## 评测协议与边界
 
-三个场景的纯点线输出均用本仓库 `image-stitch` 对**Frame 6000**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效的像素、且 Local/Global 都判静态的部分，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global Frame 6000 的 PSNR/SSIM。运行：
+三个场景的纯点线输出均用本仓库 `image-stitch` 对**Frame 6000**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效且 Local/Global 都判静态的像素，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global Frame 6000 的 PSNR/SSIM。该数值评测仍针对静态共同区；上面的全区域热图则覆盖样例 ROI 内全部像素。运行：
 
 ```bash
 python -m pip install -e '.[benchmark]'
@@ -131,9 +136,9 @@ python scripts/evaluate_three_region.py --example examples/three_region_stitch/2
 
 | 场景 | 共同静态像素 | SIFT + RANSAC | 纯点线 H | RAFT 静态区 |
 | --- | ---: | ---: | ---: | ---: |
-| 商街人群 | 74,921 | 16.539 dB / 0.5282 | 16.749 dB / 0.5504 | 18.236 dB / 0.6703 |
-| 城市道路 | 99,603 | 19.602 dB / 0.6637 | 17.754 dB / 0.5108 | 20.667 dB / 0.7145 |
-| 运动场人群 | 91,812 | 18.111 dB / 0.5468 | 17.850 dB / 0.5115 | 18.499 dB / 0.5508 |
+| 商街人群 | 75,041 | 16.173 dB / 0.4679 | 16.513 dB / 0.5105 | 18.077 dB / 0.6347 |
+| 城市道路 | 99,302 | 18.819 dB / 0.6133 | 17.572 dB / 0.4989 | 20.288 dB / 0.6899 |
+| 运动场人群 | 67,281 | 17.273 dB / 0.5398 | 17.038 dB / 0.5069 | 17.406 dB / 0.4880 |
 
 这个诊断只回答“静态重叠像素与 Global 对得怎样”。两相机曝光、遮挡和视角不同，指标本身也会受影响；运动区域没有无遮挡的真值，不能用这些数字评价运动目标的融合质量。[UDIS2 官方仓库](https://github.com/nie-lang/UDIS2)所用的 UDIS-D 是静态图像对数据集，与这里的双视角时序掩膜设置不同，因此没有把本结果写成 UDIS-D 榜单分数。单应性在存在视差和动态物体时可能产生重影，这也是三分区尝试解决的问题；背景参考见[APAP 项目页](https://cs.adelaide.edu.au/~tjchin/apap/)。
 

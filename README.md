@@ -44,7 +44,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
 5. **合成高分辨率结果**：先对 Global 背景执行 FSRCNN x4，再将红色单应性区域和蓝色 RAFT 区域的 Local 内容合入对应位置。仅在三区边界附近羽化，默认半径为原画布 2 px。
 
-当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
+当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同画布对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
 ### 商街人群 · `20220806141041707_cam11`
 
@@ -64,17 +64,17 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 左图叠加在 FSRCNN x4 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x4 Global 为背景合入 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 8 px）。
 
-#### 同一 ROI 拼接对照
+#### 全画布拼接对照
 
-| 纯点线单应性拼接 | 三分区域融合 |
+| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg" width="480" alt="商街纯点线拼接 ROI"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg" width="480" alt="商街三分区域融合 ROI"> |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg" width="480" alt="商街纯点线单应性拼接 x4"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg" width="480" alt="商街三分区域融合 x4"> |
 
-#### 静态区域误差热图
+#### 全区域误差热图
 
-![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
+![商街全区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/all_region_error_heatmaps.jpg)
 
-热图比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差；蓝色误差较小，红色较大，黑色表示不在共同静态评测区域内，用于观察静态区对齐。
+热图覆盖样例 ROI 内全部像素，显示纯点线完整拼接结果和三分区域最终结果相对 Global 输入的平均 RGB 绝对差；蓝色较小，红色较大。
 
 ## 快速运行
 
@@ -87,15 +87,17 @@ python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 ```
 
-输出在该样例的 `output/three_region/`：`final_result.jpg` 是原画布分辨率融合结果，`final_result_global_fsrcnn_x4.jpg` 是 Global 背景经 FSRCNN x4 后再合入 Local 区域的高分辨率结果，`region_overlay_on_global_fsrcnn_x4.jpg` 展示同一高分辨率背景上的区域归属，`pure_stitch_focus.jpg` 与 `three_region_focus.jpg` 是同一 ROI 的两张独立对照图，`summary.json` 记录矩阵、运行模式与像素数。可用 `--sr-mode none` 跳过超分；可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
+输出在该样例的 `output/three_region/`：`final_result.jpg` 是原画布分辨率融合结果，`final_result_global_fsrcnn_x4.jpg` 是 Global 背景经 FSRCNN x4 后再合入 Local 区域的高分辨率结果，`region_overlay_on_global_fsrcnn_x4.jpg` 展示同一高分辨率背景上的区域归属，`pure_stitch_global_fsrcnn_x4.jpg` 与高分辨率最终融合图是同画布的拼接方法对照，`summary.json` 记录矩阵、运行模式与像素数。可用 `--sr-mode none` 跳过超分；可用 `--motion-mode recompute` 从随附视频重新生成两个掩膜。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
 
 ## 同场景小规模评测
 
 用各场景的 Frame 6000 和对应 `H_init` 运行纯 OmniGlue + LineTR 单应性拼接、OpenCV SIFT + RANSAC 单应性，以及运动区单应性 + RAFT 静态区。只在三种方法共同有效、且双视角均判为静态的像素上，计算与 Global Frame 6000 的 PSNR/SSIM；这衡量**静态重叠区对齐**，不等于整图视觉质量，也不是公开数据集的官方排名。
 
+表内数值仍按共同静态区域统计；上方热图则覆盖样例 ROI 内全部像素，展示完整拼接结果相对 Global 输入的差异。
+
 | 场景 | SIFT + RANSAC | 纯点线 H | 三分区域的 RAFT 静态区 |
 | --- | --- | --- | --- |
-| 商街人群 | 16.54 dB / 0.528 | 16.75 dB / 0.550 | **18.24 dB / 0.670** |
+| 商街人群 | 16.17 dB / 0.468 | 16.51 dB / 0.511 | **18.08 dB / 0.635** |
 
 表内数值由[`scripts/evaluate_three_region.py`](scripts/evaluate_three_region.py)生成；像素数、匹配数、SIFT 输出和精确数值见该样例的 `output/benchmark/`。运动目标没有无遮挡的真值，不能从这些静态区指标推断其融合质量；请同时查看并排图和区域图。
 

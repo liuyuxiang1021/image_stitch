@@ -16,13 +16,13 @@ from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
 from .regions import (
+    compose_homography_over_background,
     compose_three_regions,
     compose_with_global_sr,
-    feather_sources,
     prepare_regions,
 )
 from .super_resolution import FSRCNNX4, sharpen_for_display
-from .visualization import region_overlay, same_crop_images, tint
+from .visualization import region_overlay, tint
 
 
 def _read_image(path: Path, flags: int = cv.IMREAD_COLOR) -> np.ndarray:
@@ -52,33 +52,14 @@ def _last_video_frame(path: Path) -> np.ndarray:
     return frame
 
 
-def _pure_on_global_canvas(
-    path: Path,
-    local_frame: np.ndarray,
-    global_frame: np.ndarray,
-    feather_radius: int,
-) -> np.ndarray:
+def _pure_homography_to_global(path: Path) -> np.ndarray:
     metadata_path = path.parent / "pure_artifacts" / "metadata.json"
     if not metadata_path.is_file():
-        raise ValueError(f"Cannot apply shared comparison feathering; metadata missing: {metadata_path}")
+        raise ValueError(f"Pure-stitch metadata is required for comparison: {metadata_path}")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     source_to_canvas = np.asarray(metadata["source_to_canvas"], dtype=np.float64)
     destination_to_canvas = np.asarray(metadata["destination_to_canvas"], dtype=np.float64)
-    source_to_global = np.linalg.inv(destination_to_canvas) @ source_to_canvas
-    height, width = global_frame.shape[:2]
-    warped_local = cv.warpPerspective(local_frame, source_to_global, (width, height))
-    local_valid = cv.warpPerspective(
-        np.full(local_frame.shape[:2], 255, dtype=np.uint8),
-        source_to_global,
-        (width, height),
-        flags=cv.INTER_NEAREST,
-    )
-    global_region = cv.bitwise_not(local_valid)
-    return feather_sources(
-        (global_frame, warped_local),
-        (global_region, local_valid),
-        feather_radius,
-    )
+    return np.linalg.inv(destination_to_canvas) @ source_to_canvas
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -113,7 +94,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--open-kernel", type=int, default=5)
     parser.add_argument("--close-kernel", type=int, default=0)
     parser.add_argument("--min-area", type=int, default=240)
-    parser.add_argument("--pure-output", type=Path, help="pure image-stitch output for same-crop comparison")
+    parser.add_argument(
+        "--pure-output", type=Path,
+        help="pure image-stitch output with metadata for same-canvas comparison",
+    )
     return parser
 
 
@@ -227,20 +211,8 @@ def main(argv=None) -> int:
     _write_image(output / "local_global_motion_masks.jpg", motion_panel)
 
     pure_path = args.pure_output or example / "output" / "pure_stitch.jpg"
+    pure_homography = _pure_homography_to_global(pure_path) if pure_path.is_file() else None
     comparison_paths = None
-    if pure_path.is_file():
-        pure = _pure_on_global_canvas(
-            pure_path, local, global_frame, args.feather_radius,
-        )
-        pure_focus, three_region_focus = same_crop_images(pure, composed.image, roi)
-        pure_focus_path = output / "pure_stitch_focus.jpg"
-        three_region_focus_path = output / "three_region_focus.jpg"
-        _write_image(pure_focus_path, pure_focus)
-        _write_image(three_region_focus_path, three_region_focus)
-        comparison_paths = {
-            "pure_stitch": str(pure_focus_path.relative_to(example)),
-            "three_region": str(three_region_focus_path.relative_to(example)),
-        }
 
     sr_info = {"mode": args.sr_mode}
     if args.sr_mode == "global-fsrcnn":
@@ -265,6 +237,21 @@ def main(argv=None) -> int:
         _write_image(sr_background_path, global_sr)
         _write_image(sr_result_path, sr_composed.image)
         _write_image(sr_overlay_path, region_overlay(global_sr, sr_composed.regions))
+        if pure_homography is not None:
+            scale = FSRCNNX4.scale
+            scale_matrix = np.diag([float(scale), float(scale), 1.0])
+            pure_result_path = output / "pure_stitch_global_fsrcnn_x4.jpg"
+            pure_highres = compose_homography_over_background(
+                global_sr,
+                local,
+                scale_matrix @ pure_homography,
+                args.feather_radius * scale,
+            )
+            _write_image(pure_result_path, pure_highres)
+            comparison_paths = {
+                "pure_stitch": str(pure_result_path.relative_to(example)),
+                "three_region": str(sr_result_path.relative_to(example)),
+            }
         sr_info.update({
             "model": str(args.sr_model),
             "scale": FSRCNNX4.scale,
@@ -275,6 +262,16 @@ def main(argv=None) -> int:
             "region_overlay": str(sr_overlay_path.relative_to(example)),
             "output_shape": list(sr_composed.image.shape),
         })
+    elif pure_homography is not None:
+        pure_result_path = output / "pure_stitch_full.jpg"
+        pure_full = compose_homography_over_background(
+            global_frame, local, pure_homography, args.feather_radius,
+        )
+        _write_image(pure_result_path, pure_full)
+        comparison_paths = {
+            "pure_stitch": str(pure_result_path.relative_to(example)),
+            "three_region": str((output / "final_result.jpg").relative_to(example)),
+        }
 
     summary = {
         "scene": manifest["scene"],

@@ -124,6 +124,30 @@ def _feather_three_sources(
     )
 
 
+def compose_homography_over_background(
+    background: np.ndarray,
+    source: np.ndarray,
+    homography: np.ndarray,
+    feather_radius: int,
+) -> np.ndarray:
+    """Warp one source onto a full background canvas and feather its boundary."""
+    height, width = background.shape[:2]
+    homography = np.asarray(homography, dtype=np.float64).reshape(3, 3)
+    warped = cv.warpPerspective(source, homography, (width, height))
+    source_valid = cv.warpPerspective(
+        np.full(source.shape[:2], 255, dtype=np.uint8),
+        homography,
+        (width, height),
+        flags=cv.INTER_NEAREST,
+    )
+    background_region = cv.bitwise_not(source_valid)
+    return feather_sources(
+        (background, warped),
+        (background_region, source_valid),
+        feather_radius,
+    )
+
+
 def compose_three_regions(
     global_frame: np.ndarray,
     local_frame: np.ndarray,
