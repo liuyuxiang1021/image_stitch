@@ -48,11 +48,11 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 ### 商街人群 `20220806141041707_cam11` · Frame 6000
 
-| Local Frame 6000（全幅） | Global Frame 6000（16:9 展示裁剪） |
+| Local Frame 6000（全幅） | Global `input/global.jpg`（Frame 6000，1070 × 786） |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local"> | <img src="examples/three_region_stitch/20220806141041707_cam11/preview/global_input_16_9.jpg" width="480" alt="商街 Global 展示裁剪"> |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local Frame 6000"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global input/global.jpg Frame 6000"> |
 
-左图是 3840 × 2160 的 Local 原始输入。右图是算法 Global 输入中的 16:9 展示裁剪；实际计算使用完整的 `input/global.jpg`（1070 × 786）。
+左图是 3840 × 2160 的 Local 原始输入。右图是算法实际使用的 Global 输入图，已去畸变并裁剪为 1070 × 786。两张图按相同显示宽度排版，高度按各自的原始宽高比显示。
 
 **三区区域归属图**：叠加在 FSRCNN x4 放大的 Global 背景上。红色表示双视角运动掩膜交集且 Local 投影有效的区域，使用单应性；蓝色表示红区之外进入 RAFT 候选、且前后向一致性检查通过的 Local 区域；绿色表示保留 Global 背景的区域。
 

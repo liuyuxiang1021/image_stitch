@@ -9,7 +9,7 @@
 | 文件 | 含义 |
 | --- | --- |
 | `input/local.jpg` | Frame 6000 的 Local 原图，3840 × 2160 |
-| `input/global.jpg` | 去畸变 Global Frame 6000 的展示裁剪，1070 × 786 |
+| `input/global.jpg` | 去畸变并裁剪后的 Global Frame 6000 输入图，1070 × 786 |
 | `input/H_init.npz` | 标定初值，Local 像素到样例 Global 像素，矩阵键 `H` |
 | `input/H_final_reference.npz` | 对应样例掩膜与 RAFT 缓存的点线精修矩阵，用于快速复现 |
 | `input/local_init_roi.mp4` | Local 视频经 `H_init` 投影、再截取投影 ROI |
