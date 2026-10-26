@@ -8,8 +8,8 @@
 
 | 文件 | 含义 |
 | --- | --- |
-| `input/local.jpg` | 最后一帧 Local 原图，3840 × 2160 |
-| `input/global.jpg` | 去畸变 Global 最后一帧的展示裁剪，1070 × 786 |
+| `input/local.jpg` | Frame 6000 的 Local 原图，3840 × 2160 |
+| `input/global.jpg` | 去畸变 Global Frame 6000 的展示裁剪，1070 × 786 |
 | `input/H_init.npz` | 标定初值，Local 像素到样例 Global 像素，矩阵键 `H` |
 | `input/H_final_reference.npz` | 对应样例掩膜与 RAFT 缓存的点线精修矩阵，用于快速复现 |
 | `input/local_init_roi.mp4` | Local 视频经 `H_init` 投影、再截取投影 ROI |
@@ -23,8 +23,8 @@
 
 这套方法主要针对前景与背景因视角变化产生的视差错位。树木、路灯杆等近景结构和远处背景通常无法由同一个单应性同时贴合。视频运动掩膜作为区域先验，帮助决定哪些 Local 像素采用运动区单应性、哪些采用 RAFT、哪些由 Global 背景提供。
 
-1. 每个视频按 100 帧分段，用逐像素中位帧作参考；当前帧与参考灰度差超过 36 的像素取并集，做 5 × 5 开运算和小连通域过滤，合并分段。得到 `M_local_init` 和 `M_global`。掩膜表达的是这段时间内曾运动的区域，包含位置轨迹，并非最后一帧的人体实例分割。
-2. 用 `H_init` 将 Local 最后一帧投到 Global 坐标系，在 ROI 内执行 OmniGlue 点匹配、LineTR 线匹配。点两端、线中点分别必须落在对应视角各自的运动掩膜内，随后稳健估计增量 `H_delta`，得到 `H_final = H_delta @ H_init`。约束不足时保留 `H_init`，并在 `summary.json` 记录原因。
+1. 每个视频按 100 帧分段，用逐像素中位帧作参考；当前帧与参考灰度差超过 36 的像素取并集，做 5 × 5 开运算和小连通域过滤，合并分段。得到 `M_local_init` 和 `M_global`。掩膜表达的是这段时间内曾运动的区域，包含位置轨迹，并非 Frame 6000 上的人体实例分割。
+2. 用 `H_init` 将 Local Frame 6000 投到 Global 坐标系，在 ROI 内执行 OmniGlue 点匹配、LineTR 线匹配。点两端、线中点分别必须落在对应视角各自的运动掩膜内，随后稳健估计增量 `H_delta`，得到 `H_final = H_delta @ H_init`。约束不足时保留 `H_init`，并在 `summary.json` 记录原因。
 3. 将 `M_local_init` 经 `H_delta` 变成 `M_local_final`，再在 Global 画布上取交集：`red = M_local_final ∩ M_global ∩ valid_local_final`。这正是双视角都判运动的有效 Local 投影区域，使用 `H_final` 投影的 Local。
 4. 其他 Local 有效重叠像素作为 RAFT 候选，包括只有一侧判运动而被红色交集剔除的像素。对 `H_final` 投影的 Local 与 Global 运行双向 RAFT，用前后向误差 < 3 px 和取样有效性过滤；通过的归蓝色 RAFT 区。未被红、蓝区接管的像素归绿色，由 Global 背景提供。三区互斥并覆盖整个 Global 画布。
 5. 原画布分辨率下，只在三区交界半径 2 px 的邻域做高斯权重羽化，输出 `final_result.jpg`，它用于对齐诊断和指标计算。
@@ -61,13 +61,13 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 | 文件 | 说明 |
 | --- | --- |
-| `output/pure_stitch.jpg` | 同一 Local/Global 最后一帧的完整纯点线 H 拼接对照 |
+| `output/pure_stitch.jpg` | 同一 Local/Global Frame 6000 的完整纯点线 H 拼接对照 |
 | `output/three_region/final_result.jpg` | 原画布分辨率的三分区域融合图，用于诊断和指标计算 |
 | `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果 |
 | `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上叠红/蓝/绿三区 |
 | `output/three_region/global_background_fsrcnn_x4.jpg` | FSRCNN x4 处理后的 Global 背景 |
 | `output/three_region/comparison_focus.jpg` | 同一个 ROI：左纯点线 H，右三分区域 |
-| `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI 最后一帧上的各自运动掩膜 |
+| `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI Frame 6000 上的各自运动掩膜 |
 | `output/three_region/region_*_mask.png` | 三个互斥最终区域的二值掩膜 |
 | `output/three_region/summary.json` | 输入模式、单应矩阵、像素计数 |
 | `output/benchmark/metrics.json` | SIFT/纯点线 H/RAFT 静态区共同像素的指标 |
@@ -81,7 +81,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ![商街 Global 超分背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
 
-商街最后一帧同范围对照：
+商街 Frame 6000 同范围对照：
 
 ![商街纯拼接与三分区域对照](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/comparison_focus.jpg)
 
@@ -89,11 +89,11 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ![商街静态共同区域误差](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
 
-城市道路最后一帧同范围对照：
+城市道路 Frame 6000 同范围对照：
 
 ![道路纯拼接与三分区域对照](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/comparison_focus.jpg)
 
-运动场人群最后一帧同范围对照：
+运动场人群 Frame 6000 同范围对照：
 
 ![运动场纯拼接与三分区域对照](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/comparison_focus.jpg)
 
@@ -101,7 +101,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 评测协议与边界
 
-三个场景的纯点线输出均用本仓库 `image-stitch` 对**同一帧**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效的像素、且 Local/Global 都判静态的部分，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global 最后一帧的 PSNR/SSIM。运行：
+三个场景的纯点线输出均用本仓库 `image-stitch` 对**Frame 6000**重新运行；没有沿用原工程历史“full homography”对照图，因为那批图的全单应性分支未真正启用。另加 [OpenCV SIFT + Lowe ratio test + RANSAC](https://docs.opencv.org/5.0/py_tutorials/py_features/py_feature_homography/py_feature_homography.html) 基线。三个方法共同有效的像素、且 Local/Global 都判静态的部分，做 3 px 腐蚀后作为共同评测掩膜，计算与 Global Frame 6000 的 PSNR/SSIM。运行：
 
 ```bash
 python -m pip install -e '.[benchmark]'

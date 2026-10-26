@@ -46,17 +46,27 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；输入预览统一显示宽度。Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
-### 商街人群 `20220806141041707_cam11`
+### 商街人群 `20220806141041707_cam11` · Frame 6000
 
-| Local 最后一帧（全幅） | Global 最后一帧（16:9 展示裁剪） |
+| Local Frame 6000（全幅） | Global Frame 6000（16:9 展示裁剪） |
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local"> | <img src="examples/three_region_stitch/20220806141041707_cam11/preview/global_input_16_9.jpg" width="480" alt="商街 Global 展示裁剪"> |
 
+左图是 3840 × 2160 的 Local 原始输入。右图是算法 Global 输入中的 16:9 展示裁剪；实际计算使用完整的 `input/global.jpg`（1070 × 786）。
+
+**三区区域归属图**：叠加在 FSRCNN x4 放大的 Global 背景上。红色表示双视角运动掩膜交集且 Local 投影有效的区域，使用单应性；蓝色表示红区之外进入 RAFT 候选、且前后向一致性检查通过的 Local 区域；绿色表示保留 Global 背景的区域。
+
 ![商街三区叠加于 Global 超分背景](examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg)
+
+**同一局部的拼接方法对照**：左图是纯点线单应性拼接并做边缘羽化，右图是三分区域融合；两边显示相同 ROI。
 
 ![商街同范围纯拼接和三分区域对照](examples/three_region_stitch/20220806141041707_cam11/output/three_region/comparison_focus.jpg)
 
+**最终高分辨率融合结果**：以 FSRCNN x4 处理后的 Global 为背景，再按三区归属合入 Local 的单应性区域和 RAFT 区域；绿色区域保留 Global。
+
 ![商街 Global 超分背景上的最终三分区域融合结果](examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg)
+
+**静态共同区域误差热图**：比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差。蓝色误差较小，红色误差较大，黑色表示不在共同静态评测区域内；它用于观察静态区对齐，不是融合结果图。
 
 ![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
 
@@ -75,7 +85,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 同场景小规模评测
 
-用相同的最后一帧和 `H_init` 运行纯 OmniGlue + LineTR 单应性拼接、OpenCV SIFT + RANSAC 单应性，以及运动区单应性 + RAFT 静态区。只在三种方法共同有效、且双视角均判为静态的像素上，计算对 Global 帧的 PSNR/SSIM；这衡量**静态重叠区对齐**，不等于整图视觉质量，也不是公开数据集的官方排名。
+用各场景的 Frame 6000 和对应 `H_init` 运行纯 OmniGlue + LineTR 单应性拼接、OpenCV SIFT + RANSAC 单应性，以及运动区单应性 + RAFT 静态区。只在三种方法共同有效、且双视角均判为静态的像素上，计算与 Global Frame 6000 的 PSNR/SSIM；这衡量**静态重叠区对齐**，不等于整图视觉质量，也不是公开数据集的官方排名。
 
 | 场景 | SIFT + RANSAC | 纯点线 H | 三分区域的 RAFT 静态区 |
 | --- | --- | --- | --- |
