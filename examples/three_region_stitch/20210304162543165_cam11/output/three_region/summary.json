@@ -22,18 +22,40 @@
   "one_sided_to_raft": true,
   "feather_radius": 2,
   "super_resolution": {
-    "mode": "global-fsrcnn",
+    "mode": "global-fsrcnn-x6",
     "model": "models/FSRCNN_x4.pb",
-    "scale": 4,
+    "scale": 6,
+    "method": "lanczos_x1.5_then_fsrcnn_x4",
+    "raft_high_resolution": true,
     "tile_size": 512,
     "tile_overlap": 24,
-    "background": "output/three_region/global_background_fsrcnn_x4.jpg",
-    "final_result": "output/three_region/final_result_global_fsrcnn_x4.jpg",
-    "region_overlay": "output/three_region/region_overlay_on_global_fsrcnn_x4.jpg",
+    "background": "output/three_region/global_background_fsrcnn_x6.jpg",
+    "final_result": "output/three_region/final_result_global_fsrcnn_x6.jpg",
+    "region_overlay": "output/three_region/region_overlay_on_global_fsrcnn_x6.jpg",
+    "local_roi_outputs": {
+      "final_result": "output/three_region/final_result_local_roi_fsrcnn_x6.jpg",
+      "region_overlay": "output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg",
+      "native_xyxy": [
+        195,
+        195,
+        873,
+        586
+      ]
+    },
     "output_shape": [
-      3144,
-      4280,
+      4716,
+      6420,
       3
+    ]
+  },
+  "local_roi_outputs": {
+    "final_result": "output/three_region/final_result_local_roi_fsrcnn_x6.jpg",
+    "region_overlay": "output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg",
+    "native_xyxy": [
+      195,
+      195,
+      873,
+      586
     ]
   },
   "H_init": [
@@ -76,7 +98,9 @@
     "motion": 82000
   },
   "comparison_images": {
-    "pure_stitch": "output/three_region/pure_stitch_global_fsrcnn_x4.jpg",
-    "three_region": "output/three_region/final_result_global_fsrcnn_x4.jpg"
+    "pure_stitch": "output/three_region/pure_stitch_global_fsrcnn_x6.jpg",
+    "three_region": "output/three_region/final_result_global_fsrcnn_x6.jpg",
+    "pure_stitch_local_roi": "output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg",
+    "three_region_local_roi": "output/three_region/final_result_local_roi_fsrcnn_x6.jpg"
   }
 }

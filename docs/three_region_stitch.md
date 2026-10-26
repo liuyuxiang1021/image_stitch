@@ -28,11 +28,11 @@
 3. 将 `M_local_init` 经 `H_delta` 变成 `M_local_final`，再在 Global 画布上取交集：`red = M_local_final ∩ M_global ∩ valid_local_final`。这正是双视角都判运动的有效 Local 投影区域，使用 `H_final` 投影的 Local。
 4. 其他 Local 有效重叠像素作为 RAFT 候选，包括只有一侧判运动而被红色交集剔除的像素。对 `H_final` 投影的 Local 与 Global 运行双向 RAFT，用前后向误差 < 3 px 和取样有效性过滤；通过的归蓝色 RAFT 区。未被红、蓝区接管的像素归绿色，由 Global 背景提供。三区互斥并覆盖整个 Global 画布。
 5. 原画布分辨率下，只在三区交界半径 2 px 的邻域做高斯权重羽化，输出 `final_result.jpg`，它用于对齐诊断和指标计算。
-6. 高分辨率展示时，先对 Global 背景做 FSRCNN x4，再把 Local 的单应性区和 RAFT 区合入放大的画布；绿色区因此来自超分后的 Global 背景，Local 区域保持来自相机图像的细节。边界羽化半径同步放大到 8 px，输出 `final_result_global_fsrcnn_x4.jpg`。颜色归属图也叠在同一张 Global 超分背景上。
+6. 高分辨率展示时，将完整当前 Global 画布输出为 x6：先用 Lanczos 插值放大 1.5 倍，再执行 FSRCNN x4。将原始 Local 按 x6 单应性直接投影到新画布；RAFT 光流位移同步乘 6，并作用于高分辨率 Local 投影，避免把低分辨率 RAFT 融合图插值放大。掩膜采用最近邻放大，边界羽化半径同步放大到 12 px，输出 `final_result_global_fsrcnn_x6.jpg`。颜色归属图也叠在同一张 x6 Global 背景上。
 
 ## 复现
 
-基础安装及缓存复现不需要 GPU 或下载 RAFT/OmniGlue/LineTR 权重；仓库自带 FSRCNN x4 权重用于生成高分辨率 Global 背景：
+基础安装及缓存复现不需要 GPU 或下载 RAFT/OmniGlue/LineTR 权重；仓库自带 FSRCNN x4 权重，用于“1.5 倍 Lanczos 插值 + FSRCNN x4”的 x6 输出。样例缓存中包含 RAFT 对齐图、有效掩膜和光流场：
 
 ```bash
 python -m pip install -e .
@@ -63,10 +63,14 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | `output/pure_stitch.jpg` | 同一 Local/Global Frame 6000 的完整纯点线 H 拼接对照 |
 | `output/three_region/final_result.jpg` | 原画布分辨率的三分区域融合图，用于诊断和指标计算 |
-| `output/three_region/final_result_global_fsrcnn_x4.jpg` | Global 背景经 FSRCNN x4 后合入 Local 区域的高分辨率结果，三区边界半径 8 px 羽化 |
-| `output/three_region/region_overlay_on_global_fsrcnn_x4.jpg` | Global 超分背景上的红/蓝/绿区域归属可视化，保留清晰边界以便识别 |
-| `output/three_region/global_background_fsrcnn_x4.jpg` | FSRCNN x4 处理后的 Global 背景 |
-| `output/three_region/pure_stitch_global_fsrcnn_x4.jpg` | 与三分区域结果同画布、同分辨率的纯点线单应性拼接结果 |
+| `output/three_region/final_result_global_fsrcnn_x6.jpg` | 当前完整 Global 画布的 x6 三分区域融合结果，三区边界半径 12 px 羽化 |
+| `output/three_region/final_result_local_roi_fsrcnn_x6.jpg` | 围绕 Local 投影范围裁取的近 4K 融合结果 |
+| `output/three_region/region_overlay_on_global_fsrcnn_x6.jpg` | x6 Global 背景上的红/蓝/绿区域归属可视化，保留清晰边界以便识别 |
+| `output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg` | Local 局部融合 ROI 的区域归属可视化 |
+| `output/three_region/global_background_fsrcnn_x6.jpg` | x6 Global 背景，先 Lanczos 插值 1.5 倍，再执行 FSRCNN x4 |
+| `output/three_region/pure_stitch_global_fsrcnn_x6.jpg` | 与三分区域结果同画布、同分辨率的纯点线单应性拼接结果 |
+| `output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg` | 与 Local 局部融合图相同 ROI 的纯点线拼接结果 |
+| `output/three_region/raft_flow.npz` | 对齐 Local 局部时使用的 RAFT 位移场，供高分辨率重采样及缓存复现 |
 | `output/three_region/local_global_motion_masks.jpg` | Local/Global 原始 ROI Frame 6000 上的各自运动掩膜 |
 | `output/three_region/region_*_mask.png` | 三个互斥最终区域的二值掩膜 |
 | `output/three_region/summary.json` | 输入模式、单应矩阵、像素计数 |
@@ -79,15 +83,23 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 | 三区归属图 | 最终融合结果 |
 | --- | --- |
-| ![商街 Global 超分背景上的区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg) | ![商街 Global 超分背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
+| ![商街 Global x6 背景上的区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg) | ![商街 Global x6 背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
 
-左图叠加在 FSRCNN x4 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x4 Global 为背景合入 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 8 px）。
+左图叠加在 x6 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x6 Global 为背景合入原始 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 12 px）。x6 Global 使用 Lanczos 1.5 倍插值加 FSRCNN x4；Local 在高分辨率坐标系中直接重投影，RAFT 区也从高分辨率 Local 重采样。
+
+#### Local 区域近 4K 拼接对照
+
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| ![商街纯点线 Local ROI x6](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg) | ![商街三分区域 Local ROI x6](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg) |
+
+两图取自完整 x6 结果的相同 Local 投影 ROI，含 24 px 原画布留白，尺寸均为 4080 × 2352。
 
 #### 全画布拼接对照
 
-| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
+| 纯点线单应性拼接（x6） | 三分区域融合（x6） |
 | --- | --- |
-| ![商街纯点线拼接全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![商街三分区域融合全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
+| ![商街纯点线拼接全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_global_fsrcnn_x6.jpg) | ![商街三分区域融合全画布](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
 
 #### 全区域误差热图
 
@@ -99,9 +111,9 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 #### 全画布拼接对照
 
-| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
+| 纯点线单应性拼接（x6） | 三分区域融合（x6） |
 | --- | --- |
-| ![道路纯点线拼接全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![道路三分区域融合全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
+| ![道路纯点线拼接全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_global_fsrcnn_x6.jpg) | ![道路三分区域融合全画布](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
 
 #### 全区域误差热图
 
@@ -113,9 +125,9 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 #### 全画布拼接对照
 
-| 纯点线单应性拼接（x4） | 三分区域融合（x4） |
+| 纯点线单应性拼接（x6） | 三分区域融合（x6） |
 | --- | --- |
-| ![运动场纯点线拼接全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_global_fsrcnn_x4.jpg) | ![运动场三分区域融合全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
+| ![运动场纯点线拼接全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_global_fsrcnn_x6.jpg) | ![运动场三分区域融合全画布](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
 
 #### 全区域误差热图
 

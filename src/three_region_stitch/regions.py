@@ -199,12 +199,14 @@ def compose_with_global_sr(
     regions: RegionMasks,
     *,
     feather_radius: int = 2,
+    raft_flow: np.ndarray | None = None,
 ) -> CompositeResult:
     """Composite Local H/RAFT regions over a super-resolved Global background.
 
     ``h_final`` maps source Local coordinates to the native Global canvas.
-    The Local homography warp is rendered directly at the enlarged output size;
-    the already aligned RAFT image and ownership masks are resized to match it.
+    The Local homography warp is rendered directly at the enlarged output size.
+    When the native RAFT flow is supplied, its displacement vectors are scaled
+    and applied to this high-resolution Local warp to preserve source detail.
     """
     base_height, base_width = raft_warped.shape[:2]
     out_height, out_width = global_sr.shape[:2]
@@ -224,7 +226,6 @@ def compose_with_global_sr(
     scale_matrix = np.diag([float(scale_x), float(scale_y), 1.0])
     h_highres = scale_matrix @ np.asarray(h_final, dtype=np.float64)
     homography_warp = cv.warpPerspective(local_frame, h_highres, size)
-    raft_highres = cv.resize(raft_warped, size, interpolation=cv.INTER_CUBIC)
 
     def enlarge_mask(mask: np.ndarray) -> np.ndarray:
         if mask.shape != (base_height, base_width):
@@ -239,6 +240,21 @@ def compose_with_global_sr(
         raft_region=enlarge_mask(regions.raft_region),
         homography_region=enlarge_mask(regions.homography_region),
     )
+    if raft_flow is None:
+        raft_highres = cv.resize(raft_warped, size, interpolation=cv.INTER_CUBIC)
+    else:
+        if raft_flow.shape != (base_height, base_width, 2):
+            raise ValueError("RAFT flow must have shape HxWx2 on the native Global canvas")
+        flow_highres = cv.resize(raft_flow, size, interpolation=cv.INTER_LINEAR)
+        flow_highres *= float(scale_x)
+        yy, xx = np.mgrid[:out_height, :out_width].astype(np.float32)
+        raft_highres = cv.remap(
+            homography_warp,
+            xx + flow_highres[..., 0],
+            yy + flow_highres[..., 1],
+            cv.INTER_LINEAR,
+            borderMode=cv.BORDER_CONSTANT,
+        )
     highres_result = _feather_three_sources(
         global_sr,
         raft_highres,

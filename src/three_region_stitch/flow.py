@@ -114,20 +114,22 @@ def align_static_region(
     local_valid: np.ndarray,
     static_candidate: np.ndarray,
     raft: RAFTFlow,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Flow-refine Local in the static candidate bbox and keep valid pixels."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return aligned Local, validity, and target-to-source flow on the canvas."""
     if global_frame.shape != local_warp.shape:
         raise ValueError("Global and Local warp must share a canvas")
     rows, columns = np.where(static_candidate > 0)
     refined = local_warp.copy()
     valid_result = np.zeros(global_frame.shape[:2], dtype=np.uint8)
+    flow_result = np.zeros((*global_frame.shape[:2], 2), dtype=np.float32)
     if not len(rows):
-        return refined, valid_result
+        return refined, valid_result, flow_result
     x0, x1 = max(0, int(columns.min()) - 8), min(global_frame.shape[1], int(columns.max()) + 9)
     y0, y1 = max(0, int(rows.min()) - 8), min(global_frame.shape[0], int(rows.max()) + 9)
     target = global_frame[y0:y1, x0:x1]
     source = local_warp[y0:y1, x0:x1]
     flow, flow_valid = raft.compute(target, source)
+    flow_result[y0:y1, x0:x1] = flow
     yy, xx = np.mgrid[:y1-y0, :x1-x0].astype(np.float32)
     map_x = xx + flow[..., 0]
     map_y = yy + flow[..., 1]
@@ -140,4 +142,4 @@ def align_static_region(
     valid_result[y0:y1, x0:x1] = cv.bitwise_and(
         cv.bitwise_and(flow_valid, source_valid), static_candidate[y0:y1, x0:x1],
     )
-    return refined, valid_result
+    return refined, valid_result, flow_result

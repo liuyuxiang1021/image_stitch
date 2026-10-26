@@ -21,7 +21,7 @@ from .regions import (
     compose_with_global_sr,
     prepare_regions,
 )
-from .super_resolution import FSRCNNX4, sharpen_for_display
+from .super_resolution import FSRCNNX4, FSRCNNX6, sharpen_for_display
 from .visualization import region_overlay, tint
 
 
@@ -62,6 +62,36 @@ def _pure_homography_to_global(path: Path) -> np.ndarray:
     return np.linalg.inv(destination_to_canvas) @ source_to_canvas
 
 
+def _local_roi_xyxy(
+    local_shape: tuple[int, ...],
+    homography: np.ndarray,
+    global_shape: tuple[int, ...],
+    margin: int = 24,
+) -> tuple[int, int, int, int]:
+    height, width = local_shape[:2]
+    canvas_height, canvas_width = global_shape[:2]
+    corners = np.array(
+        [[[0.0, 0.0]], [[width - 1.0, 0.0]],
+         [[width - 1.0, height - 1.0]], [[0.0, height - 1.0]]],
+        dtype=np.float64,
+    )
+    projected = cv.perspectiveTransform(
+        corners, np.asarray(homography, dtype=np.float64),
+    ).reshape(-1, 2)
+    x0 = max(0, int(np.floor(projected[:, 0].min())) - margin)
+    y0 = max(0, int(np.floor(projected[:, 1].min())) - margin)
+    x1 = min(canvas_width, int(np.ceil(projected[:, 0].max())) + margin + 1)
+    y1 = min(canvas_height, int(np.ceil(projected[:, 1].max())) + margin + 1)
+    if x0 >= x1 or y0 >= y1:
+        raise ValueError("The projected Local image does not overlap the Global canvas")
+    return x0, y0, x1, y1
+
+
+def _crop_scaled(image: np.ndarray, roi_xyxy: tuple[int, int, int, int], scale: int) -> np.ndarray:
+    x0, y0, x1, y1 = roi_xyxy
+    return image[y0 * scale:y1 * scale, x0 * scale:x1 * scale]
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--example", type=Path, required=True, help="example directory with manifest.json")
@@ -76,8 +106,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="shared Gaussian feather radius for three-region and pure-stitch comparison images",
     )
     parser.add_argument(
-        "--sr-mode", choices=("global-fsrcnn", "none"), default="global-fsrcnn",
-        help="super-resolve the Global background with FSRCNN x4 (default) or skip it",
+        "--sr-mode",
+        choices=("global-fsrcnn-x6", "global-fsrcnn-x4", "global-fsrcnn", "none"),
+        default="global-fsrcnn-x6",
+        help="Global x6 (Lanczos x1.5 + FSRCNN x4, default), x4, or no super-resolution",
     )
     parser.add_argument("--sr-model", type=Path, default=Path("models/FSRCNN_x4.pb"))
     parser.add_argument("--sr-tile-size", type=int, default=512)
@@ -172,13 +204,25 @@ def main(argv=None) -> int:
         global_frame, local, h_initial, h_final, roi, local_motion,
         global_motion, one_sided_to_raft=args.one_sided_to_raft,
     )
+    raft_flow = None
     if args.flow_mode == "cached":
         raft_warped = _read_image(example / "input/raft_warped.jpg")
         raft_valid = _read_image(example / "input/raft_valid_mask.png", cv.IMREAD_GRAYSCALE)
+        flow_paths = [inputs.get("raft_flow")]
+        flow_paths.extend((output / "raft_flow.npz", example / "output" / "three_region" / "raft_flow.npz"))
+        flow_path = next((path for path in flow_paths if path is not None and path.is_file()), None)
+        if flow_path is not None:
+            with np.load(flow_path) as cached_flow:
+                raft_flow = cached_flow["flow"].astype(np.float32, copy=False)
+        elif args.sr_mode in ("global-fsrcnn-x6", "global-fsrcnn-x4", "global-fsrcnn"):
+            raise FileNotFoundError(
+                "High-resolution Local detail needs a cached RAFT flow field. "
+                "Run once with --flow-mode raft to create it."
+            )
     else:
         print("Running bidirectional RAFT on the static overlap...", flush=True)
         raft = RAFTFlow(args.raft_root, args.raft_model, device=args.device)
-        raft_warped, raft_valid = align_static_region(
+        raft_warped, raft_valid, raft_flow = align_static_region(
             global_frame, prepared.homography_warp, prepared.valid_local,
             prepared.static_candidate, raft,
         )
@@ -193,6 +237,8 @@ def main(argv=None) -> int:
     _write_image(output / "global_motion_mask.png", global_motion)
     _write_image(output / "raft_warped.jpg", raft_warped)
     _write_image(output / "raft_valid_mask.png", raft_valid)
+    if raft_flow is not None:
+        np.savez_compressed(output / "raft_flow.npz", flow=raft_flow.astype(np.float32, copy=False))
     _write_image(output / "homography_warp.jpg", composed.homography_warp)
     _write_image(output / "region_global_mask.png", composed.regions.global_region)
     _write_image(output / "region_raft_mask.png", composed.regions.raft_region)
@@ -213,15 +259,16 @@ def main(argv=None) -> int:
     pure_path = args.pure_output or example / "output" / "pure_stitch.jpg"
     pure_homography = _pure_homography_to_global(pure_path) if pure_path.is_file() else None
     comparison_paths = None
+    local_roi_outputs = None
 
     sr_info = {"mode": args.sr_mode}
-    if args.sr_mode == "global-fsrcnn":
+    if args.sr_mode in ("global-fsrcnn-x6", "global-fsrcnn-x4", "global-fsrcnn"):
         model_path = args.sr_model.resolve()
-        sr_model = FSRCNNX4(
-            model_path,
-            tile_size=args.sr_tile_size,
-            overlap=args.sr_tile_overlap,
+        use_x6 = args.sr_mode == "global-fsrcnn-x6"
+        sr_model = (FSRCNNX6 if use_x6 else FSRCNNX4)(
+            model_path, tile_size=args.sr_tile_size, overlap=args.sr_tile_overlap,
         )
+        scale = sr_model.scale
         global_sr = sharpen_for_display(sr_model.upsample(global_frame))
         sr_composed = compose_with_global_sr(
             global_sr,
@@ -230,17 +277,29 @@ def main(argv=None) -> int:
             raft_warped,
             composed.regions,
             feather_radius=args.feather_radius,
+            raft_flow=raft_flow,
         )
-        sr_result_path = output / "final_result_global_fsrcnn_x4.jpg"
-        sr_overlay_path = output / "region_overlay_on_global_fsrcnn_x4.jpg"
-        sr_background_path = output / "global_background_fsrcnn_x4.jpg"
+        scale_suffix = f"x{scale}"
+        sr_result_path = output / f"final_result_global_fsrcnn_{scale_suffix}.jpg"
+        sr_overlay_path = output / f"region_overlay_on_global_fsrcnn_{scale_suffix}.jpg"
+        sr_background_path = output / f"global_background_fsrcnn_{scale_suffix}.jpg"
         _write_image(sr_background_path, global_sr)
         _write_image(sr_result_path, sr_composed.image)
-        _write_image(sr_overlay_path, region_overlay(global_sr, sr_composed.regions))
+        sr_overlay = region_overlay(global_sr, sr_composed.regions)
+        _write_image(sr_overlay_path, sr_overlay)
+        local_roi = _local_roi_xyxy(local.shape, h_final, global_frame.shape)
+        local_result_path = output / f"final_result_local_roi_fsrcnn_{scale_suffix}.jpg"
+        local_overlay_path = output / f"region_overlay_local_roi_fsrcnn_{scale_suffix}.jpg"
+        _write_image(local_result_path, _crop_scaled(sr_composed.image, local_roi, scale))
+        _write_image(local_overlay_path, _crop_scaled(sr_overlay, local_roi, scale))
+        local_roi_outputs = {
+            "final_result": str(local_result_path.relative_to(example)),
+            "region_overlay": str(local_overlay_path.relative_to(example)),
+            "native_xyxy": list(local_roi),
+        }
         if pure_homography is not None:
-            scale = FSRCNNX4.scale
             scale_matrix = np.diag([float(scale), float(scale), 1.0])
-            pure_result_path = output / "pure_stitch_global_fsrcnn_x4.jpg"
+            pure_result_path = output / f"pure_stitch_global_fsrcnn_{scale_suffix}.jpg"
             pure_highres = compose_homography_over_background(
                 global_sr,
                 local,
@@ -248,18 +307,25 @@ def main(argv=None) -> int:
                 args.feather_radius * scale,
             )
             _write_image(pure_result_path, pure_highres)
+            pure_local_path = output / f"pure_stitch_local_roi_fsrcnn_{scale_suffix}.jpg"
+            _write_image(pure_local_path, _crop_scaled(pure_highres, local_roi, scale))
             comparison_paths = {
                 "pure_stitch": str(pure_result_path.relative_to(example)),
                 "three_region": str(sr_result_path.relative_to(example)),
+                "pure_stitch_local_roi": str(pure_local_path.relative_to(example)),
+                "three_region_local_roi": str(local_result_path.relative_to(example)),
             }
         sr_info.update({
             "model": str(args.sr_model),
-            "scale": FSRCNNX4.scale,
+            "scale": scale,
+            "method": "lanczos_x1.5_then_fsrcnn_x4" if use_x6 else "fsrcnn_x4",
+            "raft_high_resolution": raft_flow is not None,
             "tile_size": args.sr_tile_size,
             "tile_overlap": args.sr_tile_overlap,
             "background": str(sr_background_path.relative_to(example)),
             "final_result": str(sr_result_path.relative_to(example)),
             "region_overlay": str(sr_overlay_path.relative_to(example)),
+            "local_roi_outputs": local_roi_outputs,
             "output_shape": list(sr_composed.image.shape),
         })
     elif pure_homography is not None:
@@ -285,6 +351,7 @@ def main(argv=None) -> int:
         "one_sided_to_raft": args.one_sided_to_raft,
         "feather_radius": args.feather_radius,
         "super_resolution": sr_info,
+        "local_roi_outputs": local_roi_outputs,
         "H_init": h_initial.tolist(),
         "H_final": h_final.tolist(),
         "region_pixels": {
