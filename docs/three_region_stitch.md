@@ -74,35 +74,55 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | `output/benchmark/metrics.json` | SIFT/纯点线 H/RAFT 静态区共同像素的指标 |
 | `output/benchmark/static_error_heatmaps.jpg` | 同一静态共同掩膜、同一误差色标下与 Global 参考帧的误差图 |
 
-商街人群的区域归属与高分辨率最终融合结果：
+### 商街人群 · `20220806141041707_cam11`
 
-| 区域归属图 | 最终融合结果 |
+#### 区域归属与最终融合
+
+| 三区归属图 | 最终融合结果 |
 | --- | --- |
 | ![商街 Global 超分背景上的区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg) | ![商街 Global 超分背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg) |
 
-商街 Frame 6000 同一 ROI 的两种方法对照：
+左图叠加在 FSRCNN x4 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x4 Global 为背景合入 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 8 px）。
+
+#### 同一 ROI 拼接对照
 
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
 | ![商街纯点线拼接局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg) | ![商街三分区域融合局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg) |
 
-蓝色代表误差小，红色代表误差大，黑色在共同静态评测掩膜之外；两幅热图使用相同色标。
+两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
+
+#### 静态区域误差热图
 
 ![商街静态共同区域误差](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
 
-城市道路 Frame 6000 同一 ROI 的两种方法对照：
+蓝色代表误差较小，红色代表误差较大，黑色表示不在共同静态评测区域内；两幅热图使用相同色标，用于观察纯点线单应性和 RAFT 静态区相对 Global 的对齐误差。
+
+### 城市道路 · `20210304162543165_cam11`
+
+#### 同一 ROI 拼接对照
 
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
 | ![道路纯点线拼接局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_focus.jpg) | ![道路三分区域融合局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/three_region_focus.jpg) |
 
-运动场人群 Frame 6000 同一 ROI 的两种方法对照：
+两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
+
+#### 静态区域误差热图
+
+![道路静态共同区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
+
+蓝色代表误差较小，红色代表误差较大，黑色表示不在共同静态评测区域内；热图用于观察纯点线单应性和 RAFT 静态区相对 Global 的对齐误差。
+
+### 运动场人群 · `20220601174105159_cam11`
+
+#### 同一 ROI 拼接对照
 
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
 | ![运动场纯点线拼接局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_focus.jpg) | ![运动场三分区域融合局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/three_region_focus.jpg) |
 
-![道路静态共同区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
+两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
 
 ## 评测协议与边界
 

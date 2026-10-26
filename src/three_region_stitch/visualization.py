@@ -35,19 +35,28 @@ def focus_bbox(roi: tuple[int, int, int, int], shape: tuple[int, int, int], padd
     )
 
 
+def same_crop_images(
+    pure: np.ndarray,
+    three_region: np.ndarray,
+    roi: tuple[int, int, int, int],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the same ROI from both results without adding image annotations."""
+    if pure.shape != three_region.shape:
+        raise ValueError("Comparison images must be on the same Global canvas")
+    x0, y0, x1, y1 = focus_bbox(roi, pure.shape)
+    return pure[y0:y1, x0:x1].copy(), three_region[y0:y1, x0:x1].copy()
+
+
 def same_crop_panels(
     pure: np.ndarray,
     three_region: np.ndarray,
     roi: tuple[int, int, int, int],
     titles: tuple[str, str] = ("Point-line H + feather", "Motion + RAFT + Global"),
 ) -> tuple[np.ndarray, np.ndarray]:
-    if pure.shape != three_region.shape:
-        raise ValueError("Comparison images must be on the same Global canvas")
-    x0, y0, x1, y1 = focus_bbox(roi, pure.shape)
+    crops = same_crop_images(pure, three_region, roi)
     bar = 36
     panels = []
-    for image, title in zip((pure, three_region), titles):
-        crop = image[y0:y1, x0:x1]
+    for crop, title in zip(crops, titles):
         panel = np.zeros((crop.shape[0] + bar, crop.shape[1], 3), dtype=np.uint8)
         panel[bar:] = crop
         cv.putText(panel, title, (10, 25), cv.FONT_HERSHEY_SIMPLEX,

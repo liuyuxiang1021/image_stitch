@@ -17,7 +17,7 @@ from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
 from .regions import compose_three_regions, compose_with_global_sr, prepare_regions
 from .super_resolution import FSRCNNX4, sharpen_for_display
-from .visualization import region_overlay, same_crop_panels, tint
+from .visualization import region_overlay, same_crop_images, tint
 
 
 def _read_image(path: Path, flags: int = cv.IMREAD_COLOR) -> np.ndarray:
@@ -207,7 +207,7 @@ def main(argv=None) -> int:
     comparison_paths = None
     if pure_path.is_file():
         pure = _pure_on_global_canvas(pure_path, global_frame.shape)
-        pure_focus, three_region_focus = same_crop_panels(pure, composed.image, roi)
+        pure_focus, three_region_focus = same_crop_images(pure, composed.image, roi)
         pure_focus_path = output / "pure_stitch_focus.jpg"
         three_region_focus_path = output / "three_region_focus.jpg"
         _write_image(pure_focus_path, pure_focus)

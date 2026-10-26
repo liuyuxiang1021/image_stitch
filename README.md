@@ -44,33 +44,39 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
 5. **合成高分辨率结果**：先对 Global 背景执行 FSRCNN x4，再将红色单应性区域和蓝色 RAFT 区域的 Local 内容合入对应位置。仅在三区边界附近羽化，默认半径为原画布 2 px。
 
-当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；输入预览统一显示宽度。Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
+当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
-### 商街人群 `20220806141041707_cam11` · Frame 6000
+### 商街人群 · `20220806141041707_cam11`
 
-| Local Frame 6000（全幅） | Global `input/global.jpg`（Frame 6000，1070 × 786） |
+#### 输入图像
+
+| Local 输入 | Global 输入 |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local Frame 6000"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global input/global.jpg Frame 6000"> |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local 全幅输入"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global 输入"> |
 
-左图是 3840 × 2160 的 Local 原始输入。右图是算法实际使用的 Global 输入图，已去畸变并裁剪为 1070 × 786。
+两图是同步的 Frame 6000 输入：Local 为相机原始全幅（3840 × 2160），Global 为去畸变并裁剪后的输入（1070 × 786）。
 
-**三区区域归属图与最终融合结果**：下面两张图并列展示。区域图采用硬掩膜颜色，便于辨认区域边界；最终图以 FSRCNN x4 Global 为背景，合入 Local 内容，并在区域边界以原画布 2 px（x4 输出 8 px）半径羽化。
+#### 区域归属与最终融合
 
-| 三区区域归属图 | 最终高分辨率融合结果 |
+| 三区归属图 | 最终融合结果 |
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x4.jpg" width="480" alt="商街三区区域归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x4.jpg" width="480" alt="商街最终高分辨率融合结果"> |
 
-区域颜色：红色是双视角运动掩膜交集内有效的单应性区；蓝色是红区外通过 RAFT 检查的区域；绿色保留 Global。
+左图叠加在 FSRCNN x4 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x4 Global 为背景合入 Local 内容，并在区域交界处高斯羽化（原画布半径 2 px，放大后 8 px）。
 
-**同一 ROI 的拼接方法对照**：两张图分别展示纯点线单应性拼接（左）和三分区域融合（右），使用相同 ROI，保持为独立图片。
+#### 同一 ROI 拼接对照
 
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg" width="480" alt="商街纯点线拼接 ROI"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg" width="480" alt="商街三分区域融合 ROI"> |
 
-**静态共同区域误差热图**：比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差。蓝色误差较小，红色误差较大，黑色表示不在共同静态评测区域内；它用于观察静态区对齐，不是融合结果图。
+两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
+
+#### 静态区域误差热图
 
 ![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
+
+热图比较纯点线单应性和 RAFT 静态区相对 Global 的像素误差；蓝色误差较小，红色较大，黑色表示不在共同静态评测区域内，用于观察静态区对齐。
 
 ## 快速运行
 
