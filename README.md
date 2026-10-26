@@ -18,18 +18,23 @@
 
 ### 算法流程
 
-算法主要处理不同景深的前景与背景因视角变化产生的视差错位，典型情况是树木、路灯杆等近景结构和远处背景难以被同一个单应性同时对齐。Local/Global 短视频得到的运动掩膜是区域划分线索；人、车等动态区域据此选择单应性、RAFT 或 Global 超分背景作为融合来源。输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的短视频。
+算法主要处理不同景深的前景与背景因视角变化产生的视差错位，典型情况是树木、路灯杆等近景结构和远处背景难以被同一个单应性同时对齐。Local/Global 短视频得到的运动掩膜提供区域划分线索；两侧共同运动区域、其他有效 Local 区域和不可靠区域分别走不同的融合路径。输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的短视频。
 
 1. **建立几何初值**：用 `H_init` 把 Local 映射到 Global 坐标系，作为两视角对齐的起点。
-2. **提取运动线索并精修单应性**：从两路短视频分别生成运动掩膜；进行 Local/Global 点线匹配，只保留两侧运动掩膜都覆盖到的对应，估计 `H_final`。
-3. **生成三区归属图**：将 Local 运动掩膜按 `H_delta` 从初始投影位置更新到 `H_final` 对应的 Global 坐标系，与 Global 运动掩膜比较，并检查 Local 投影有效性。蓝色区域还需通过 RAFT 前后向一致性检查。
-4. **合成高分辨率结果**：先对 Global 背景执行 FSRCNN x4，再将红色单应性区域和蓝色 RAFT 区域的 Local 内容合入对应位置。像素归属无效或 RAFT 检查失败的位置由 Global 超分背景填充。仅在三区边界附近羽化，默认半径为原画布 2 px。
+2. **提取运动线索并精修单应性**：分别从 Local、Global 视频生成 `M_local_init` 和 `M_global`。它们记录一段时间内出现过变化的位置。点线匹配只保留在两侧运动掩膜中都成立的对应，据此估计增量 `H_delta`，并得到 `H_final = H_delta · H_init`。
+3. **把掩膜和有效范围放到同一坐标系**：`M_local_init` 位于 `H_init` 初始投影坐标；再用 `H_delta` 将它更新到 `H_final` 坐标，得到 `M_local_final`。同时用 `H_final` 投影 Local 的全有效图，得到 `V_local_final`。现在 `M_local_final`、`M_global` 和 `V_local_final` 都在 Global 画布上，可以逐像素确定归属。
+4. **生成互斥的三区归属图**：
 
-| 可视化颜色 | 区域条件 | 合成来源 |
-| --- | --- | --- |
-| 红色 | Global 判为运动，投影后的 Local 也判为运动，且 Local 投影有效 | 使用 `H_final` 投影 Local |
-| 蓝色 | 其余有效重叠区域，且 RAFT 前后向一致性检查通过 | 使用 RAFT 对齐后的 Local |
-| 绿色 | 不属于上述两区，或 Local 投影/RAFT 对齐无效 | 使用 FSRCNN x4 超分后的 Global 背景 |
+   | 区域 | 像素条件 | 该区域使用的图像 |
+   | --- | --- | --- |
+   | 红色：运动区单应性 | `M_local_final ∩ M_global ∩ V_local_final`。两视角都判为运动，而且 Local 投影有效。 | 用 `H_final` 投影的 Local |
+   | 蓝色：RAFT 区 | `V_local_final` 中不属于红区、并通过 RAFT 前后向一致性检查的像素。默认也包含只有一侧判运动的像素。 | 用 RAFT 对齐后的 Local |
+   | 绿色：Global 背景区 | 不属于红区或有效蓝区的所有像素，包括 Local 无有效投影、RAFT 检查失败的位置。 | 用 FSRCNN x4 超分后的 Global |
+
+   默认划分可写为 `R_H = M_local_final ∩ M_global ∩ V_local_final`，`R_RAFT = (V_local_final − R_H) ∩ V_RAFT`，`R_Global = Ω_Global − (R_H ∪ R_RAFT)`。`V_RAFT` 是 RAFT 前后向误差小于 3 px 且取样有效的位置，`Ω_Global` 是整张 Global 画布。因此三块互不重叠，并覆盖整张画布。
+
+   **为什么用 motion mask：**运动掩膜不是前景/背景语义标签。它标出视频中随时间发生变化的位置，用来约束共同运动区域里的点线匹配，并决定哪些像素走单应性分支。树木、路灯杆等静止近景不一定进入运动掩膜；它们与远景之间的局部视差由蓝色 RAFT 区处理，RAFT 不可靠时则回退到绿色 Global 超分背景。也就是说，motion mask 提供分区线索，前景/背景视差由不同区域的对齐与取景策略共同处理。
+5. **合成高分辨率结果**：先对 Global 背景执行 FSRCNN x4，再将红色单应性区域和蓝色 RAFT 区域的 Local 内容合入对应位置。仅在三区边界附近羽化，默认半径为原画布 2 px。
 
 当前展示这一组商街样例。Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同范围对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
 
