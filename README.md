@@ -95,11 +95,26 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 全 ROI 的 PSNR/SSIM 表示结果与 Global 输入的相似程度，不是有真值的拼接质量分数。三分区域结果中由 Global 保留的像素与参照相同，因此会影响全 ROI 得分。
 
+**全 ROI PSNR（dB）**
+
 | 场景 | 全 ROI 像素 | SIFT + RANSAC | 纯点线 H | 三分区域最终结果 |
 | --- | ---: | ---: | ---: | ---: |
-| 商街人群 | 236,880 | 15.710 dB / 0.4889 | 15.696 dB / 0.5037 | **17.025 dB / 0.5824** |
+| 商街人群 | 236,880 | 15.710 | 15.696 | **17.025** |
 
-静态共同区域参考值仍保留在 [`metrics.json`](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/metrics.json)：75,041 像素上，SIFT + RANSAC 为 16.173 dB / 0.4679，纯点线 H 为 16.513 dB / 0.5105，RAFT 静态区为 18.077 dB / 0.6347。各场景完整数值见对应样例的 `output/benchmark/metrics.json`。
+**全 ROI SSIM**
+
+| 场景 | SIFT + RANSAC | 纯点线 H | 三分区域最终结果 |
+| --- | ---: | ---: | ---: |
+| 商街人群 | 0.4889 | 0.5037 | **0.5824** |
+
+静态共同区参考值保留在 [`metrics.json`](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/metrics.json)：
+
+| 区域 | 指标 | SIFT + RANSAC | 纯点线 H | RAFT 静态区 |
+| --- | --- | ---: | ---: | ---: |
+| 静态共同区（75,041 px） | PSNR（dB） | 16.173 | 16.513 | 18.077 |
+| 静态共同区（75,041 px） | SSIM | 0.4679 | 0.5105 | 0.6347 |
+
+各场景完整数值见对应样例的 `output/benchmark/metrics.json`。
 
 ## 仓库结构
 
