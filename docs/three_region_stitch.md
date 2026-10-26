@@ -90,8 +90,6 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | ![商街纯点线拼接局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg) | ![商街三分区域融合局部](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg) |
 
-两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
-
 #### 静态区域误差热图
 
 ![商街静态共同区域误差](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
@@ -106,8 +104,6 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | ![道路纯点线拼接局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_focus.jpg) | ![道路三分区域融合局部](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/three_region_focus.jpg) |
 
-两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
-
 #### 静态区域误差热图
 
 ![道路静态共同区域误差](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/static_error_heatmaps.jpg)
@@ -121,8 +117,6 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
 | ![运动场纯点线拼接局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_focus.jpg) | ![运动场三分区域融合局部](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/three_region_focus.jpg) |
-
-两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
 
 ## 评测协议与边界
 

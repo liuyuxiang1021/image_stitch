@@ -70,8 +70,6 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_focus.jpg" width="480" alt="商街纯点线拼接 ROI"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/three_region_focus.jpg" width="480" alt="商街三分区域融合 ROI"> |
 
-两图为相同 Global ROI 的原始拼接结果裁剪，不叠加标题框；纯点线结果使用 32 px 边缘羽化，三分区域结果在三区交界处以原画布半径 2 px 羽化。
-
 #### 静态区域误差热图
 
 ![商街静态共同区域误差热图](examples/three_region_stitch/20220806141041707_cam11/output/benchmark/static_error_heatmaps.jpg)
