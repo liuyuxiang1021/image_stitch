@@ -41,6 +41,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--line-angle-threshold", type=float, default=15.0)
     parser.add_argument("--feather-width", type=float, default=32.0)
     parser.add_argument("--feather-power", type=float, default=1.0)
+    parser.add_argument("--no-color-correction", action="store_true", help="disable default HHM Local-to-Global color correction")
+    parser.add_argument("--color-correction-coeff", type=float, default=1.0)
+    parser.add_argument("--color-correction-threshold", type=float, default=0.5)
     return parser
 
 
@@ -67,6 +70,7 @@ def _metadata(result, args) -> dict:
             "feather_width_pixels": args.feather_width,
             "feather_power": args.feather_power,
         },
+        "color_correction": result.color_correction,
         "matching": {
             "omniglue_confidence_threshold": args.confidence,
             "points_before_filter": diagnostics.points_before_filter,
@@ -111,6 +115,9 @@ def main(argv=None) -> int:
             initial_homography=initial_h,
             feather_width=args.feather_width,
             feather_power=args.feather_power,
+            color_correction=not args.no_color_correction,
+            color_correction_coeff=args.color_correction_coeff,
+            color_correction_threshold=args.color_correction_threshold,
             max_match_width=args.max_match_width,
             point_weight=args.point_weight,
             line_weight=args.line_weight,
@@ -169,6 +176,12 @@ def main(argv=None) -> int:
         )
     diagnostics = result.estimation.diagnostics
     print(f"Wrote {args.output} ({result.panorama.shape[1]}x{result.panorama.shape[0]})")
+    if result.color_correction:
+        print(
+            "HHM color correction: "
+            f"{result.color_correction.get('reason')} "
+            f"using {result.color_correction.get('paired_pixels_sampled', 0)} paired overlap pixels"
+        )
     print(f"Accepted {diagnostics.points_after_filter}/{diagnostics.points_before_filter} points, {diagnostics.lines_after_filter}/{diagnostics.lines_before_filter} lines; point RMSE={diagnostics.point_rmse!s}, line RMSE={diagnostics.line_rmse!s}")
     return 0
 

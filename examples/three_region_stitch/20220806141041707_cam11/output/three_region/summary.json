@@ -21,6 +21,52 @@
   "flow_mode": "cached",
   "one_sided_to_raft": true,
   "feather_radius": 2,
+  "color_correction": {
+    "enabled": true,
+    "method": "HHM",
+    "coeff": 1.0,
+    "local_straightening_threshold": 0.5,
+    "max_paired_pixels": 400000,
+    "native_canvas": {
+      "method": "HHM",
+      "applied": true,
+      "reason": "ok",
+      "coeff": 1.0,
+      "local_straightening_threshold": 0.5,
+      "paired_pixels_available": 202962,
+      "paired_pixels_sampled": 202962,
+      "paired_pixels_by_source_region": [
+        100592,
+        102370
+      ],
+      "mapping_shared_across_source_regions": true
+    },
+    "x6_output": {
+      "method": "HHM",
+      "applied": true,
+      "reason": "ok",
+      "coeff": 1.0,
+      "local_straightening_threshold": 0.5,
+      "paired_pixels_available": 7306632,
+      "paired_pixels_sampled": 400000,
+      "paired_pixels_by_source_region": [
+        3621312,
+        3685320
+      ],
+      "mapping_shared_across_source_regions": true
+    }
+  },
+  "raft_region_cleanup": {
+    "morphology": "elliptical opening",
+    "open_kernel_size": 3,
+    "min_component_area_native_px": 256,
+    "removed_pixels_owner": "Global",
+    "raft_pixels_before_cleanup": 101957,
+    "raft_pixels_after_cleanup": 100592,
+    "raft_pixels_removed": 1365,
+    "connected_components_before_cleanup": 64,
+    "connected_components_after_cleanup": 6
+  },
   "super_resolution": {
     "mode": "global-fsrcnn-x6",
     "model": "models/FSRCNN_x4.pb",
@@ -93,8 +139,8 @@
     ]
   ],
   "region_pixels": {
-    "global": 636693,
-    "raft": 101957,
+    "global": 638058,
+    "raft": 100592,
     "motion": 102370
   },
   "comparison_images": {

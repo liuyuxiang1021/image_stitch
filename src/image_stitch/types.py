@@ -59,3 +59,4 @@ class StitchResult:
     source_to_canvas: np.ndarray
     destination_to_canvas: np.ndarray
     estimation: HomographyResult
+    color_correction: dict | None = None

@@ -12,6 +12,7 @@
 - Huber 鲁棒权重和点线匹配置信度权重；
 - 直接估计 `H`，或从已有 `H_init` 估计 `H_delta` 并生成 `H_final`；
 - 自动画布、有效掩膜和有限宽度的 local 边缘羽化融合；
+- 根据 Local/Global 有效重叠区估计 HHM 色彩映射，默认校正 Local 后再融合；
 - 保存矩阵、匹配数量、RMSE 以及点线匹配可视化。
 
 算法和坐标变换的详细说明见 [algorithm.md](algorithm.md)。
@@ -35,16 +36,16 @@ p_global ~ H_final @ p_local
 H_final = H_delta @ H_init
 ```
 
-程序先用 `H_init` 将 local 投到 global 坐标系，在有效重叠区域执行 OmniGlue 点匹配和 LineTR 线匹配，再联合优化增量 `H_delta`。每个样例的输出目录包含：
+程序先用 `H_init` 将 local 投到 global 坐标系，在有效重叠区域执行 OmniGlue 点匹配和 LineTR 线匹配，再联合优化增量 `H_delta`。随后按投影后的 Local/Global 重叠像素估计 HHM 色彩映射，先校正 Local，再进行边缘羽化融合。默认映射系数为 1，可用 `--no-color-correction` 关闭。每个样例的输出目录包含：
 
 | 文件 | 含义 |
 | --- | --- |
-| `output/panorama.jpg` | 用 `H_final` 投影并羽化融合后的最终图像 |
+| `output/panorama.jpg` | 用 `H_final` 投影、HHM 色差矫正并羽化融合后的最终图像 |
 | `output/initial_warp.jpg` | 只用 `H_init` 投影 local 的原始全尺寸结果；投影区域外为黑色 |
 | `output/initial_alignment.jpg` | 清晰版初值可视化：左侧在 global 中定位投影区域，右侧显示放大的 local/global 叠加细节 |
 | `output/final_alignment.jpg` | 清晰版最终可视化：左侧在完整 panorama 中定位最终覆盖区域，右侧放大真实的羽化融合结果 |
 | `output/point_line_matches.jpg` | 裁到投影 ROI 后的点线匹配可视化，展示尺寸不再受 global 全画布影响 |
-| `output/metadata.json` | 输入路径、初值和最终投影 ROI、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE 和迭代次数 |
+| `output/metadata.json` | 输入路径、初值和最终投影 ROI、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE、迭代次数及 HHM 采样统计 |
 
 这些样例中 local 的视野包含在 global 的部分区域内，因此输出是 global 坐标系下的 `3840 × 2160` 融合图，而不是左右并排、横向扩展的传统全景图。
 
@@ -52,7 +53,7 @@ H_final = H_delta @ H_init
 
 `final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是带定位框的完整最终画布，右侧是黄色框对应的最终融合像素，并使用相同的 2 px 青色虚线标记 local 边界。原始无标注大图仍保存在 `panorama.jpg`，三个样例的尺寸均为 `3840 × 2160`。
 
-默认只在 local 投影边缘内侧 32 px 范围进行羽化：边界处由 global 平滑过渡，离开边界 32 px 后 local 权重达到 100%。可通过 `--feather-width` 调整过渡宽度；设为 `0` 表示不羽化、直接覆盖。
+默认根据重叠区估计 HHM 颜色映射并校正 Local，然后只在 local 投影边缘内侧 32 px 范围羽化：边界处由 global 平滑过渡，离开边界 32 px 后 local 权重达到 100%。可通过 `--feather-width` 调整过渡宽度；设为 `0` 表示不羽化、直接覆盖。色彩映射系数和 HHM 稀疏直方图阈值可分别通过 `--color-correction-coeff`、`--color-correction-threshold` 调整。
 
 ## 三个真实场景样例
 
@@ -181,6 +182,9 @@ image-stitch source.jpg destination.jpg \
 --line-angle-threshold 15.0     线方向差阈值（度）
 --feather-width 32              local 边缘羽化宽度（输出像素），0 表示直接覆盖
 --feather-power 1.0             羽化曲线指数
+--no-color-correction           关闭默认开启的 HHM 色差矫正
+--color-correction-coeff 1.0    HHM 映射系数，0 到 1
+--color-correction-threshold 0.5 HHM 稀疏直方图阈值
 --device auto                   auto / cpu / cuda
 --gpu 0                         同时提供给 TensorFlow 与 PyTorch 的物理 GPU
 ```

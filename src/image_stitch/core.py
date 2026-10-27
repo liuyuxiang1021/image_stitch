@@ -7,6 +7,7 @@ from pathlib import Path
 import cv2 as cv
 import numpy as np
 
+from .color_correction import apply_hhm_luts, fit_hhm_for_regions
 from .matchers import validate_matcher_inputs
 from .optimization import estimate_point_line_homography
 from .types import FeatureMatches, HomographyResult, StitchResult
@@ -193,6 +194,10 @@ def compose_pair(
     feather_width: float = 32.0,
     feather_power: float = 1.0,
     max_canvas_pixels: int = 100_000_000,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.5,
+    color_correction_max_samples: int = 400_000,
 ) -> StitchResult:
     transformed_source_corners = cv.perspectiveTransform(_corners(source), estimation.homography)
     all_corners = np.concatenate((_corners(destination), transformed_source_corners), axis=0).reshape(-1, 2)
@@ -214,6 +219,21 @@ def compose_pair(
     destination_mask = cv.warpPerspective(
         np.full(destination.shape[:2], 255, dtype=np.uint8), destination_transform, size, flags=cv.INTER_NEAREST
     )
+    correction_stats = {
+        "method": "HHM", "applied": False, "reason": "disabled",
+        "paired_pixels_available": 0, "paired_pixels_sampled": 0,
+    }
+    if color_correction:
+        overlap = cv.bitwise_and(source_mask, destination_mask)
+        luts, correction_stats = fit_hhm_for_regions(
+            warped_destination,
+            [warped_source],
+            [overlap],
+            coeff=color_correction_coeff,
+            local_straightening_threshold=color_correction_threshold,
+            max_samples=color_correction_max_samples,
+        )
+        warped_source = apply_hhm_luts(warped_source, luts, source_mask)
     source_alpha = _local_blend_alpha(
         source_mask,
         destination_mask,
@@ -230,7 +250,7 @@ def compose_pair(
     panorama[valid] = np.clip(color_sum[valid], 0, 255).astype(np.uint8)
     return StitchResult(
         panorama, source_mask, destination_mask,
-        source_transform, destination_transform, estimation,
+        source_transform, destination_transform, estimation, correction_stats,
     )
 
 
@@ -243,6 +263,10 @@ def stitch_pair(
     initial_homography: np.ndarray | None = None,
     feather_width: float = 32.0,
     feather_power: float = 1.0,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.5,
+    color_correction_max_samples: int = 400_000,
     **estimation_options,
 ) -> StitchResult:
     if initial_homography is None:
@@ -260,6 +284,10 @@ def stitch_pair(
         estimation,
         feather_width=feather_width,
         feather_power=feather_power,
+        color_correction=color_correction,
+        color_correction_coeff=color_correction_coeff,
+        color_correction_threshold=color_correction_threshold,
+        color_correction_max_samples=color_correction_max_samples,
     )
 
 

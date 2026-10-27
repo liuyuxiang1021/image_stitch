@@ -60,7 +60,8 @@
   "blending": {
     "mode": "local_edge_feather",
     "feather_width_pixels": 32.0,
-    "feather_power": 1.0
+    "feather_power": 1.0,
+    "color_correction": "HHM estimated from valid Local/Global overlap"
   },
   "matching": {
     "omniglue_confidence_threshold": 0.1,
@@ -137,5 +138,18 @@
     597,
     695,
     412
-  ]
+  ],
+  "color_correction": {
+    "method": "HHM",
+    "applied": true,
+    "reason": "ok",
+    "coeff": 1.0,
+    "local_straightening_threshold": 0.5,
+    "paired_pixels_available": 212519,
+    "paired_pixels_sampled": 212519,
+    "paired_pixels_by_source_region": [
+      212519
+    ],
+    "mapping_shared_across_source_regions": false
+  }
 }

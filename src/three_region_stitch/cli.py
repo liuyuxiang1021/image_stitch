@@ -16,6 +16,8 @@ from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
 from .motion import MotionConfig, detect_motion
 from .regions import (
+    DEFAULT_RAFT_MIN_COMPONENT_AREA,
+    DEFAULT_RAFT_OPEN_KERNEL_SIZE,
     compose_homography_over_background,
     compose_three_regions,
     compose_with_global_sr,
@@ -105,6 +107,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--feather-radius", type=int, default=2,
         help="shared Gaussian feather radius for three-region and pure-stitch comparison images",
     )
+    parser.add_argument("--no-color-correction", action="store_true", help="disable HHM color correction")
+    parser.add_argument("--color-correction-coeff", type=float, default=1.0)
+    parser.add_argument("--color-correction-threshold", type=float, default=0.5)
+    parser.add_argument("--color-correction-max-samples", type=int, default=400_000)
+    parser.add_argument(
+        "--raft-open-kernel-size", type=int, default=DEFAULT_RAFT_OPEN_KERNEL_SIZE,
+        help="morphological opening kernel for cleaning the RAFT ownership mask; 0 disables it",
+    )
+    parser.add_argument(
+        "--raft-min-component-area", type=int, default=DEFAULT_RAFT_MIN_COMPONENT_AREA,
+        help="discard RAFT ownership components smaller than this many native-canvas pixels; 0 disables it",
+    )
     parser.add_argument(
         "--sr-mode",
         choices=("global-fsrcnn-x6", "global-fsrcnn-x4", "global-fsrcnn", "none"),
@@ -137,6 +151,10 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     if args.feather_radius < 0:
         raise SystemExit("feather-radius must be non-negative")
+    if args.color_correction_max_samples < 0:
+        raise SystemExit("color-correction-max-samples must be non-negative")
+    if args.raft_open_kernel_size < 0 or args.raft_min_component_area < 0:
+        raise SystemExit("RAFT region cleanup parameters must be non-negative")
     if args.sr_tile_size < 16 or args.sr_tile_overlap < 0 or args.sr_tile_overlap * 2 >= args.sr_tile_size:
         raise SystemExit("invalid FSRCNN tile size or overlap")
     if args.device == "cpu":
@@ -231,6 +249,12 @@ def main(argv=None) -> int:
         local_motion, global_motion, raft_warped, raft_valid,
         one_sided_to_raft=args.one_sided_to_raft,
         feather_radius=args.feather_radius,
+        raft_open_kernel_size=args.raft_open_kernel_size,
+        raft_min_component_area=args.raft_min_component_area,
+        color_correction=not args.no_color_correction,
+        color_correction_coeff=args.color_correction_coeff,
+        color_correction_threshold=args.color_correction_threshold,
+        color_correction_max_samples=args.color_correction_max_samples,
     )
 
     _write_image(output / "local_motion_init_mask.png", local_motion)
@@ -278,6 +302,10 @@ def main(argv=None) -> int:
             composed.regions,
             feather_radius=args.feather_radius,
             raft_flow=raft_flow,
+            color_correction=not args.no_color_correction,
+            color_correction_coeff=args.color_correction_coeff,
+            color_correction_threshold=args.color_correction_threshold,
+            color_correction_max_samples=args.color_correction_max_samples,
         )
         scale_suffix = f"x{scale}"
         sr_result_path = output / f"final_result_global_fsrcnn_{scale_suffix}.jpg"
@@ -305,6 +333,10 @@ def main(argv=None) -> int:
                 local,
                 scale_matrix @ pure_homography,
                 args.feather_radius * scale,
+                color_correction=not args.no_color_correction,
+                color_correction_coeff=args.color_correction_coeff,
+                color_correction_threshold=args.color_correction_threshold,
+                color_correction_max_samples=args.color_correction_max_samples,
             )
             _write_image(pure_result_path, pure_highres)
             pure_local_path = output / f"pure_stitch_local_roi_fsrcnn_{scale_suffix}.jpg"
@@ -332,6 +364,10 @@ def main(argv=None) -> int:
         pure_result_path = output / "pure_stitch_full.jpg"
         pure_full = compose_homography_over_background(
             global_frame, local, pure_homography, args.feather_radius,
+            color_correction=not args.no_color_correction,
+            color_correction_coeff=args.color_correction_coeff,
+            color_correction_threshold=args.color_correction_threshold,
+            color_correction_max_samples=args.color_correction_max_samples,
         )
         _write_image(pure_result_path, pure_full)
         comparison_paths = {
@@ -350,6 +386,22 @@ def main(argv=None) -> int:
         "flow_mode": args.flow_mode,
         "one_sided_to_raft": args.one_sided_to_raft,
         "feather_radius": args.feather_radius,
+        "color_correction": {
+            "enabled": not args.no_color_correction,
+            "method": "HHM",
+            "coeff": args.color_correction_coeff,
+            "local_straightening_threshold": args.color_correction_threshold,
+            "max_paired_pixels": args.color_correction_max_samples,
+            "native_canvas": composed.color_correction,
+            "x6_output": sr_composed.color_correction if args.sr_mode in ("global-fsrcnn-x6", "global-fsrcnn-x4", "global-fsrcnn") else None,
+        },
+        "raft_region_cleanup": {
+            "morphology": "elliptical opening",
+            "open_kernel_size": args.raft_open_kernel_size,
+            "min_component_area_native_px": args.raft_min_component_area,
+            "removed_pixels_owner": "Global",
+            **(composed.regions.raft_cleanup_stats or {}),
+        },
         "super_resolution": sr_info,
         "local_roi_outputs": local_roi_outputs,
         "H_init": h_initial.tolist(),

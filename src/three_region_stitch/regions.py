@@ -7,6 +7,12 @@ from dataclasses import dataclass
 import cv2 as cv
 import numpy as np
 
+from image_stitch.color_correction import apply_hhm_luts, fit_hhm_for_regions
+
+
+DEFAULT_RAFT_OPEN_KERNEL_SIZE = 3
+DEFAULT_RAFT_MIN_COMPONENT_AREA = 256
+
 
 @dataclass(frozen=True)
 class RegionMasks:
@@ -16,6 +22,7 @@ class RegionMasks:
     global_region: np.ndarray
     raft_region: np.ndarray
     homography_region: np.ndarray
+    raft_cleanup_stats: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -23,6 +30,8 @@ class CompositeResult:
     image: np.ndarray
     homography_warp: np.ndarray
     regions: RegionMasks
+    color_correction: dict | None = None
+    color_luts: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -124,11 +133,45 @@ def _feather_three_sources(
     )
 
 
+def _clean_raft_region(
+    raft_region: np.ndarray,
+    *,
+    open_kernel_size: int = DEFAULT_RAFT_OPEN_KERNEL_SIZE,
+    min_component_area: int = DEFAULT_RAFT_MIN_COMPONENT_AREA,
+) -> np.ndarray:
+    """Remove speckles from the RAFT ownership mask without growing it.
+
+    A small morphological opening removes pixel-scale noise. Connected
+    components smaller than ``min_component_area`` are then discarded; those
+    pixels become Global-owned when the complementary region is constructed.
+    """
+    if open_kernel_size < 0 or min_component_area < 0:
+        raise ValueError("RAFT cleanup parameters must be non-negative")
+    clean = (raft_region > 0).astype(np.uint8) * 255
+    if open_kernel_size > 1:
+        kernel = cv.getStructuringElement(
+            cv.MORPH_ELLIPSE, (open_kernel_size, open_kernel_size),
+        )
+        clean = cv.morphologyEx(clean, cv.MORPH_OPEN, kernel)
+    if min_component_area > 1 and np.any(clean):
+        count, labels, stats, _ = cv.connectedComponentsWithStats(clean, 8)
+        keep = np.zeros(count, dtype=bool)
+        keep[1:] = stats[1:, cv.CC_STAT_AREA] >= min_component_area
+        clean = keep[labels].astype(np.uint8) * 255
+    return clean
+
+
 def compose_homography_over_background(
     background: np.ndarray,
     source: np.ndarray,
     homography: np.ndarray,
     feather_radius: int,
+    *,
+    color_luts: np.ndarray | None = None,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.5,
+    color_correction_max_samples: int = 400_000,
 ) -> np.ndarray:
     """Warp one source onto a full background canvas and feather its boundary."""
     height, width = background.shape[:2]
@@ -140,6 +183,15 @@ def compose_homography_over_background(
         (width, height),
         flags=cv.INTER_NEAREST,
     )
+    if color_correction:
+        if color_luts is None:
+            color_luts, _ = fit_hhm_for_regions(
+                background, [warped], [source_valid],
+                coeff=color_correction_coeff,
+                local_straightening_threshold=color_correction_threshold,
+                max_samples=color_correction_max_samples,
+            )
+        warped = apply_hhm_luts(warped, color_luts, source_valid)
     background_region = cv.bitwise_not(source_valid)
     return feather_sources(
         (background, warped),
@@ -161,6 +213,12 @@ def compose_three_regions(
     *,
     one_sided_to_raft: bool = True,
     feather_radius: int = 2,
+    raft_open_kernel_size: int = DEFAULT_RAFT_OPEN_KERNEL_SIZE,
+    raft_min_component_area: int = DEFAULT_RAFT_MIN_COMPONENT_AREA,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.5,
+    color_correction_max_samples: int = 400_000,
 ) -> CompositeResult:
     """Red=both motion, blue=flow-valid Local static, green=Global.
 
@@ -179,16 +237,54 @@ def compose_three_regions(
         prepared.static_candidate, (raft_valid_mask > 0).astype(np.uint8) * 255,
     )
     raft_region = cv.bitwise_and(raft_region, cv.bitwise_not(prepared.mutual_motion))
+    raft_pixels_before = int(np.count_nonzero(raft_region))
+    raft_components_before = max(
+        0, cv.connectedComponentsWithStats(raft_region, 8)[0] - 1,
+    ) if raft_pixels_before else 0
+    raft_region = _clean_raft_region(
+        raft_region,
+        open_kernel_size=raft_open_kernel_size,
+        min_component_area=raft_min_component_area,
+    )
+    raft_pixels_after = int(np.count_nonzero(raft_region))
+    raft_components_after = max(
+        0, cv.connectedComponentsWithStats(raft_region, 8)[0] - 1,
+    ) if raft_pixels_after else 0
     global_region = cv.bitwise_not(cv.bitwise_or(prepared.mutual_motion, raft_region))
     masks = RegionMasks(
         prepared.local_motion_final, prepared.mutual_motion,
         prepared.static_exclusion, global_region, raft_region,
         prepared.mutual_motion,
+        {
+            "raft_pixels_before_cleanup": raft_pixels_before,
+            "raft_pixels_after_cleanup": raft_pixels_after,
+            "raft_pixels_removed": raft_pixels_before - raft_pixels_after,
+            "connected_components_before_cleanup": raft_components_before,
+            "connected_components_after_cleanup": raft_components_after,
+        },
     )
+    homography_warp = prepared.homography_warp
+    correction_stats = {
+        "method": "HHM", "applied": False, "reason": "disabled",
+        "paired_pixels_available": 0, "paired_pixels_sampled": 0,
+        "mapping_shared_across_source_regions": False,
+    }
+    color_luts = None
+    if color_correction:
+        color_luts, correction_stats = fit_hhm_for_regions(
+            global_frame,
+            [raft_warped, homography_warp],
+            [masks.raft_region, masks.homography_region],
+            coeff=color_correction_coeff,
+            local_straightening_threshold=color_correction_threshold,
+            max_samples=color_correction_max_samples,
+        )
+        raft_warped = apply_hhm_luts(raft_warped, color_luts, masks.raft_region)
+        homography_warp = apply_hhm_luts(homography_warp, color_luts, prepared.valid_local)
     result = _feather_three_sources(
-        global_frame, raft_warped, prepared.homography_warp, masks, feather_radius,
+        global_frame, raft_warped, homography_warp, masks, feather_radius,
     )
-    return CompositeResult(result, prepared.homography_warp, masks)
+    return CompositeResult(result, homography_warp, masks, correction_stats, color_luts)
 
 
 def compose_with_global_sr(
@@ -200,6 +296,10 @@ def compose_with_global_sr(
     *,
     feather_radius: int = 2,
     raft_flow: np.ndarray | None = None,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.5,
+    color_correction_max_samples: int = 400_000,
 ) -> CompositeResult:
     """Composite Local H/RAFT regions over a super-resolved Global background.
 
@@ -239,6 +339,7 @@ def compose_with_global_sr(
         global_region=enlarge_mask(regions.global_region),
         raft_region=enlarge_mask(regions.raft_region),
         homography_region=enlarge_mask(regions.homography_region),
+        raft_cleanup_stats=regions.raft_cleanup_stats,
     )
     if raft_flow is None:
         raft_highres = cv.resize(raft_warped, size, interpolation=cv.INTER_CUBIC)
@@ -255,11 +356,28 @@ def compose_with_global_sr(
             cv.INTER_LINEAR,
             borderMode=cv.BORDER_CONSTANT,
         )
+    correction_stats = {
+        "method": "HHM", "applied": False, "reason": "disabled",
+        "paired_pixels_available": 0, "paired_pixels_sampled": 0,
+        "mapping_shared_across_source_regions": False,
+    }
+    color_luts = None
+    if color_correction:
+        color_luts, correction_stats = fit_hhm_for_regions(
+            global_sr,
+            [raft_highres, homography_warp],
+            [highres_regions.raft_region, highres_regions.homography_region],
+            coeff=color_correction_coeff,
+            local_straightening_threshold=color_correction_threshold,
+            max_samples=color_correction_max_samples,
+        )
+        raft_highres = apply_hhm_luts(raft_highres, color_luts, highres_regions.raft_region)
+        homography_warp = apply_hhm_luts(
+            homography_warp, color_luts,
+            cv.bitwise_or(highres_regions.raft_region, highres_regions.homography_region),
+        )
     highres_result = _feather_three_sources(
-        global_sr,
-        raft_highres,
-        homography_warp,
-        highres_regions,
+        global_sr, raft_highres, homography_warp, highres_regions,
         feather_radius * scale_x,
     )
-    return CompositeResult(highres_result, homography_warp, highres_regions)
+    return CompositeResult(highres_result, homography_warp, highres_regions, correction_stats, color_luts)
