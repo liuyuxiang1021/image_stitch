@@ -18,22 +18,22 @@
   "all_roi_height": 2352,
   "all_roi_pixels": 9596160,
   "super_resolution_scale": 6,
-  "feather_radius_native_px": 2,
+  "feather_radius_native_px": 6,
   "all_roi_methods": {
     "SIFT_RANSAC_H": {
-      "psnr_db": 16.894,
-      "ssim": 0.5746,
-      "ratio_test_matches": 235,
-      "ransac_inliers": 205,
+      "psnr_db": 16.665,
+      "ssim": 0.5552,
+      "ratio_test_matches": 232,
+      "ransac_inliers": 200,
       "x6_crop": "output/benchmark/sift_ransac_local_roi_fsrcnn_x6.jpg"
     },
     "OmniGlue_LineTR_H": {
-      "psnr_db": 16.713,
-      "ssim": 0.5687
+      "psnr_db": 16.533,
+      "ssim": 0.5551
     },
     "three_region_final": {
-      "psnr_db": 17.928,
-      "ssim": 0.6016
+      "psnr_db": 17.395,
+      "ssim": 0.5879
     }
   },
   "interpretation_limit": "PSNR/SSIM measure similarity to the x6 Global reference over this ROI, not ground-truth stitching quality. Global-retained pixels in the three-region output match that reference by construction and affect these scores."

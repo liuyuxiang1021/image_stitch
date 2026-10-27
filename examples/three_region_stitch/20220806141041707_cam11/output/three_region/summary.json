@@ -20,19 +20,19 @@
   },
   "flow_mode": "cached",
   "one_sided_to_raft": true,
-  "feather_radius": 2,
+  "feather_radius": 6,
   "color_correction": {
     "enabled": true,
     "method": "HHM",
     "coeff": 1.0,
-    "local_straightening_threshold": 0.5,
+    "local_straightening_threshold": 0.05,
     "max_paired_pixels": 400000,
     "native_canvas": {
       "method": "HHM",
       "applied": true,
       "reason": "ok",
       "coeff": 1.0,
-      "local_straightening_threshold": 0.5,
+      "local_straightening_threshold": 0.05,
       "paired_pixels_available": 202962,
       "paired_pixels_sampled": 202962,
       "paired_pixels_by_source_region": [
@@ -46,7 +46,7 @@
       "applied": true,
       "reason": "ok",
       "coeff": 1.0,
-      "local_straightening_threshold": 0.5,
+      "local_straightening_threshold": 0.05,
       "paired_pixels_available": 7306632,
       "paired_pixels_sampled": 400000,
       "paired_pixels_by_source_region": [

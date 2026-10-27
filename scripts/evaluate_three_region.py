@@ -114,7 +114,7 @@ def main() -> None:
     three_output = args.three_output or example / "output/three_region"
     three_summary = json.loads((three_output / "summary.json").read_text())
     scale = int(three_summary["super_resolution"]["scale"])
-    feather_radius = int(three_summary.get("feather_radius", 2))
+    feather_radius = int(three_summary.get("feather_radius", 6))
     roi = tuple(int(value) for value in three_summary["local_roi_outputs"]["native_xyxy"])
     x0, y0, x1, y1 = roi
     roi_x6 = (x0 * scale, y0 * scale, x1 * scale, y1 * scale)

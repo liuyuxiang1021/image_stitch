@@ -104,7 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--recompute-all", action="store_true", help="recompute masks, point-line H, and RAFT")
     parser.add_argument("--one-sided-to-raft", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument(
-        "--feather-radius", type=int, default=2,
+        "--feather-radius", type=int, default=6,
         help="shared Gaussian feather radius for three-region and pure-stitch comparison images",
     )
     parser.add_argument("--no-color-correction", action="store_true", help="disable HHM color correction")

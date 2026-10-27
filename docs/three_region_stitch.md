@@ -27,8 +27,8 @@
 2. 用 `H_init` 将 Local Frame 6000 投到 Global 坐标系，在 ROI 内执行 OmniGlue 点匹配、LineTR 线匹配。点两端、线中点分别必须落在对应视角各自的运动掩膜内，随后稳健估计增量 `H_delta`，得到 `H_final = H_delta @ H_init`。约束不足时保留 `H_init`，并在 `summary.json` 记录原因。
 3. 将 `M_local_init` 经 `H_delta` 变成 `M_local_final`，再在 Global 画布上取交集：`red = M_local_final ∩ M_global ∩ valid_local_final`。这正是双视角都判运动的有效 Local 投影区域，使用 `H_final` 投影的 Local。
 4. 其他 Local 有效重叠像素作为 RAFT 候选，包括只有一侧判运动而被红色交集剔除的像素。对 `H_final` 投影的 Local 与 Global 运行双向 RAFT，用前后向误差 < 3 px 和取样有效性过滤；通过的归蓝色 RAFT 区。未被红、蓝区接管的像素归绿色，由 Global 背景提供。三区互斥并覆盖整个 Global 画布。
-5. 原画布分辨率下，只在三区交界半径 2 px 的邻域做高斯权重羽化，输出 `final_result.jpg`，它用于对齐诊断和指标计算。
-6. 高分辨率展示时，将完整当前 Global 画布输出为 x6：先用 Lanczos 插值放大 1.5 倍，再执行 FSRCNN x4。将原始 Local 按 x6 单应性直接投影到新画布；RAFT 光流位移同步乘 6，并作用于高分辨率 Local 投影，避免把低分辨率 RAFT 融合图插值放大。分别从红色单应性区、蓝色 RAFT 区抽取与 x6 Global 对齐的像素对，共同估计一套 HHM 色彩映射，再同时应用于两路 Local 来源。纯点线单应性结果则使用自身 Local/Global 重叠区估计映射。掩膜采用最近邻放大，颜色校正后在区域边界羽化，半径为 12 px，输出 `final_result_global_fsrcnn_x6.jpg`。颜色归属图也叠在同一张 x6 Global 背景上。
+5. 原画布分辨率下，只在三区交界半径 6 px 的邻域做高斯权重羽化，输出 `final_result.jpg`，它用于对齐诊断和指标计算。
+6. 高分辨率展示时，将完整当前 Global 画布输出为 x6：先用 Lanczos 插值放大 1.5 倍，再执行 FSRCNN x4。将原始 Local 按 x6 单应性直接投影到新画布；RAFT 光流位移同步乘 6，并作用于高分辨率 Local 投影，避免把低分辨率 RAFT 融合图插值放大。分别从红色单应性区、蓝色 RAFT 区抽取与 x6 Global 对齐的像素对，共同估计一套 HHM 色彩映射，再同时应用于两路 Local 来源。纯点线单应性结果则使用自身 Local/Global 重叠区估计映射。掩膜采用最近邻放大，颜色校正后在区域边界羽化，半径为 36 px，输出 `final_result_global_fsrcnn_x6.jpg`。颜色归属图也叠在同一张 x6 Global 背景上。
 
 HHM 默认开启，纯点线拼接和三分区域输出各自估计映射；三分区域内部的红、蓝来源共用同一映射。可用 `--no-color-correction` 关闭，或用 `--color-correction-coeff`、`--color-correction-threshold` 调整映射。
 
@@ -65,7 +65,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | `output/pure_stitch.jpg` | 同一 Local/Global Frame 6000 的纯点线 H 完整拼接结果 |
 | `output/three_region/final_result.jpg` | 原画布分辨率的三分区域融合图，用于诊断 |
-| `output/three_region/final_result_global_fsrcnn_x6.jpg` | 当前完整 Global 画布的 x6 三分区域融合结果，三区边界半径 12 px 羽化 |
+| `output/three_region/final_result_global_fsrcnn_x6.jpg` | 当前完整 Global 画布的 x6 三分区域融合结果，三区边界半径 36 px 羽化 |
 | `output/three_region/final_result_local_roi_fsrcnn_x6.jpg` | 围绕 Local 投影范围裁取的近 4K 融合结果 |
 | `output/three_region/region_overlay_on_global_fsrcnn_x6.jpg` | x6 Global 背景上的红/蓝/绿区域归属可视化，保留清晰边界以便识别 |
 | `output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg` | Local 局部融合 ROI 的区域归属可视化 |
@@ -88,7 +88,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 | --- | --- |
 | ![商街 Global x6 背景上的区域划分](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg) | ![商街 Global x6 背景上的最终融合图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
 
-左图叠加在 x6 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x6 Global 为背景合入原始 Local 内容。红、蓝区域共同估计一套 HHM 色彩映射并同时应用于两路 Local 来源，区域交界处再做高斯羽化（原画布半径 2 px，放大后 12 px）。x6 Global 使用 Lanczos 1.5 倍插值加 FSRCNN x4；Local 在高分辨率坐标系中直接重投影，RAFT 区也从高分辨率 Local 重采样。
+左图叠加在 x6 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x6 Global 为背景合入原始 Local 内容。红、蓝区域共同估计一套 HHM 色彩映射并同时应用于两路 Local 来源，区域交界处再做高斯羽化（原画布半径 6 px，放大后 36 px）。x6 Global 使用 Lanczos 1.5 倍插值加 FSRCNN x4；Local 在高分辨率坐标系中直接重投影，RAFT 区也从高分辨率 Local 重采样。
 
 #### Local 区域近 4K 拼接对照
 
@@ -100,13 +100,9 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 #### 全 ROI 误差热图
 
-**纯点线单应性拼接**
-
-![纯点线误差热图](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg)
-
-**三分区域融合**
-
-![三分区域误差热图](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/three_region_error_heatmap_x6.jpg)
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| ![纯点线误差热图](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg) | ![三分区域误差热图](../examples/three_region_stitch/20220806141041707_cam11/output/benchmark/three_region_error_heatmap_x6.jpg) |
 
 两张图分别显示对应 x6 结果相对 x6 Global 背景的平均 RGB 绝对差；颜色由蓝到红表示误差由小到大，图片独立保存，不带标题框。
 
@@ -114,13 +110,9 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 #### 全 ROI 误差热图
 
-**纯点线单应性拼接**
-
-![纯点线误差热图](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg)
-
-**三分区域融合**
-
-![三分区域误差热图](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/three_region_error_heatmap_x6.jpg)
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| ![纯点线误差热图](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg) | ![三分区域误差热图](../examples/three_region_stitch/20210304162543165_cam11/output/benchmark/three_region_error_heatmap_x6.jpg) |
 
 两张图分别显示对应 x6 结果相对 x6 Global 背景的平均 RGB 绝对差；颜色由蓝到红表示误差由小到大，图片独立保存，不带标题框。
 
@@ -128,13 +120,9 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 #### 全 ROI 误差热图
 
-**纯点线单应性拼接**
-
-![纯点线误差热图](../examples/three_region_stitch/20220601174105159_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg)
-
-**三分区域融合**
-
-![三分区域误差热图](../examples/three_region_stitch/20220601174105159_cam11/output/benchmark/three_region_error_heatmap_x6.jpg)
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| ![纯点线误差热图](../examples/three_region_stitch/20220601174105159_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg) | ![三分区域误差热图](../examples/three_region_stitch/20220601174105159_cam11/output/benchmark/three_region_error_heatmap_x6.jpg) |
 
 两张图分别显示对应 x6 结果相对 x6 Global 背景的平均 RGB 绝对差；颜色由蓝到红表示误差由小到大，图片独立保存，不带标题框。
 
@@ -153,9 +141,9 @@ python scripts/evaluate_three_region.py --example examples/three_region_stitch/2
 
 | 场景 | ROI 尺寸 | ROI 像素 | SIFT PSNR（dB） | 纯点线 PSNR（dB） | 三分区域 PSNR（dB） | SIFT SSIM | 纯点线 SSIM | 三分区域 SSIM |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 商街人群 | 4080 × 2352 | 9,596,160 | 16.894 | 16.713 | **17.928** | 0.5746 | 0.5687 | **0.6016** |
-| 城市道路 | 4068 × 2346 | 9,543,528 | **18.270** | 17.603 | 18.166 | **0.6897** | 0.6590 | 0.6876 |
-| 运动场人群 | 4500 × 2418 | 10,881,000 | 17.309 | 17.239 | **18.425** | 0.5893 | 0.5841 | **0.7505** |
+| 商街人群 | 4080 × 2352 | 9,596,160 | 16.665 | 16.533 | **17.395** | 0.5552 | 0.5551 | **0.5879** |
+| 城市道路 | 4068 × 2346 | 9,543,528 | **20.497** | 18.627 | 20.579 | **0.6607** | 0.6234 | 0.6788 |
+| 运动场人群 | 4500 × 2418 | 10,881,000 | 16.727 | 16.766 | **17.791** | 0.5651 | 0.5613 | **0.7276** |
 
 这些数值表示结果与 x6 Global 背景的相似程度，不是有真值的拼接质量分数；三分区域结果中由 Global 保留的像素与参照相同，会影响得分。
 

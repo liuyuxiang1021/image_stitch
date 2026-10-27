@@ -89,10 +89,61 @@ def prepare_regions(
     )
 
 
+def _extend_source_to_feather_band(
+    source: np.ndarray,
+    valid_mask: np.ndarray,
+    radius: int,
+) -> np.ndarray:
+    """Extend owned source colors into the band used by Gaussian feathering.
+
+    Perspective warps and flow remaps use zero outside their valid support.
+    Blurring the ownership mask gives those invalid zero pixels non-zero blend
+    weights near a boundary, which appears as a dark fringe. Fill only the
+    feather support with the nearest pixel owned by this source before
+    blending.
+    """
+    valid = valid_mask > 0
+    if radius <= 0 or not np.any(valid) or np.all(valid):
+        return source
+
+    ys, xs = np.nonzero(valid)
+    height, width = valid.shape
+    x0 = max(0, int(xs.min()) - radius)
+    x1 = min(width, int(xs.max()) + radius + 1)
+    y0 = max(0, int(ys.min()) - radius)
+    y1 = min(height, int(ys.max()) + radius + 1)
+    valid_crop = valid[y0:y1, x0:x1]
+    source_crop = source[y0:y1, x0:x1]
+    if np.all(valid_crop):
+        return source
+
+    # Zero pixels become unique labels. Every pixel in the crop then points
+    # to the nearest source-valid pixel, avoiding invalid warp/remap borders.
+    distance_input = np.where(valid_crop, 0, 255).astype(np.uint8)
+    _, labels = cv.distanceTransformWithLabels(
+        distance_input,
+        cv.DIST_L2,
+        5,
+        labelType=cv.DIST_LABEL_PIXEL,
+    )
+    valid_labels = labels[valid_crop]
+    lookup = np.zeros(
+        (int(labels.max()) + 1,) + source.shape[2:],
+        dtype=source.dtype,
+    )
+    lookup[valid_labels] = source_crop[valid_crop]
+
+    extended = source.copy()
+    extended[y0:y1, x0:x1] = lookup[labels]
+    return extended
+
+
 def feather_sources(
     sources: tuple[np.ndarray, ...],
     masks: tuple[np.ndarray, ...],
     radius: int,
+    *,
+    source_valid_masks: tuple[np.ndarray, ...] | None = None,
 ) -> np.ndarray:
     if not sources or len(sources) != len(masks):
         raise ValueError("Each feathered source must have a corresponding ownership mask")
@@ -100,11 +151,21 @@ def feather_sources(
         raise ValueError("Feathered sources must have the same canvas shape")
     if any(mask.shape != sources[0].shape[:2] for mask in masks):
         raise ValueError("Feathering masks must match the source canvas")
+    if source_valid_masks is None:
+        source_valid_masks = masks
+    if len(source_valid_masks) != len(sources):
+        raise ValueError("Each feathered source must have a validity mask")
+    if any(mask.shape != sources[0].shape[:2] for mask in source_valid_masks):
+        raise ValueError("Source validity masks must match the source canvas")
     if radius <= 0:
         result = sources[0].copy()
         for source, mask in zip(sources[1:], masks[1:]):
             result[mask > 0] = source[mask > 0]
         return result
+    feathered_sources = tuple(
+        _extend_source_to_feather_band(source, valid_mask, radius)
+        for source, valid_mask in zip(sources, source_valid_masks)
+    )
     kernel = 2 * radius + 1
     weights = [
         cv.GaussianBlur((mask > 0).astype(np.float32), (kernel, kernel),
@@ -114,7 +175,7 @@ def feather_sources(
     denominator = np.maximum(sum(weights), 1e-6)
     blended = sum(
         source.astype(np.float32) * (weight / denominator)[..., None]
-        for source, weight in zip(sources, weights)
+        for source, weight in zip(feathered_sources, weights)
     )
     return np.clip(blended, 0, 255).astype(np.uint8)
 
@@ -125,11 +186,13 @@ def _feather_three_sources(
     homography_warped: np.ndarray,
     masks: RegionMasks,
     radius: int,
+    source_valid_masks: tuple[np.ndarray, ...] | None = None,
 ) -> np.ndarray:
     return feather_sources(
         (global_frame, raft_warped, homography_warped),
         (masks.global_region, masks.raft_region, masks.homography_region),
         radius,
+        source_valid_masks=source_valid_masks,
     )
 
 
@@ -197,6 +260,10 @@ def compose_homography_over_background(
         (background, warped),
         (background_region, source_valid),
         feather_radius,
+        source_valid_masks=(
+            np.full(background.shape[:2], 255, np.uint8),
+            source_valid,
+        ),
     )
 
 
@@ -212,7 +279,7 @@ def compose_three_regions(
     raft_valid_mask: np.ndarray,
     *,
     one_sided_to_raft: bool = True,
-    feather_radius: int = 2,
+    feather_radius: int = 6,
     raft_open_kernel_size: int = DEFAULT_RAFT_OPEN_KERNEL_SIZE,
     raft_min_component_area: int = DEFAULT_RAFT_MIN_COMPONENT_AREA,
     color_correction: bool = True,
@@ -279,10 +346,15 @@ def compose_three_regions(
             local_straightening_threshold=color_correction_threshold,
             max_samples=color_correction_max_samples,
         )
-        raft_warped = apply_hhm_luts(raft_warped, color_luts, masks.raft_region)
+        raft_warped = apply_hhm_luts(raft_warped, color_luts, raft_valid_mask)
         homography_warp = apply_hhm_luts(homography_warp, color_luts, prepared.valid_local)
     result = _feather_three_sources(
         global_frame, raft_warped, homography_warp, masks, feather_radius,
+        source_valid_masks=(
+            np.full(global_frame.shape[:2], 255, np.uint8),
+            raft_valid_mask,
+            prepared.valid_local,
+        ),
     )
     return CompositeResult(result, homography_warp, masks, correction_stats, color_luts)
 
@@ -294,7 +366,7 @@ def compose_with_global_sr(
     raft_warped: np.ndarray,
     regions: RegionMasks,
     *,
-    feather_radius: int = 2,
+    feather_radius: int = 6,
     raft_flow: np.ndarray | None = None,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
@@ -326,6 +398,12 @@ def compose_with_global_sr(
     scale_matrix = np.diag([float(scale_x), float(scale_y), 1.0])
     h_highres = scale_matrix @ np.asarray(h_final, dtype=np.float64)
     homography_warp = cv.warpPerspective(local_frame, h_highres, size)
+    local_valid_highres = cv.warpPerspective(
+        np.full(local_frame.shape[:2], 255, dtype=np.uint8),
+        h_highres,
+        size,
+        flags=cv.INTER_NEAREST,
+    )
 
     def enlarge_mask(mask: np.ndarray) -> np.ndarray:
         if mask.shape != (base_height, base_width):
@@ -343,18 +421,29 @@ def compose_with_global_sr(
     )
     if raft_flow is None:
         raft_highres = cv.resize(raft_warped, size, interpolation=cv.INTER_CUBIC)
+        raft_valid_highres = enlarge_mask(regions.raft_region)
     else:
         if raft_flow.shape != (base_height, base_width, 2):
             raise ValueError("RAFT flow must have shape HxWx2 on the native Global canvas")
         flow_highres = cv.resize(raft_flow, size, interpolation=cv.INTER_LINEAR)
         flow_highres *= float(scale_x)
         yy, xx = np.mgrid[:out_height, :out_width].astype(np.float32)
+        map_x = xx + flow_highres[..., 0]
+        map_y = yy + flow_highres[..., 1]
         raft_highres = cv.remap(
             homography_warp,
-            xx + flow_highres[..., 0],
-            yy + flow_highres[..., 1],
+            map_x,
+            map_y,
             cv.INTER_LINEAR,
             borderMode=cv.BORDER_CONSTANT,
+        )
+        raft_valid_highres = cv.remap(
+            local_valid_highres,
+            map_x,
+            map_y,
+            cv.INTER_NEAREST,
+            borderMode=cv.BORDER_CONSTANT,
+            borderValue=0,
         )
     correction_stats = {
         "method": "HHM", "applied": False, "reason": "disabled",
@@ -371,13 +460,15 @@ def compose_with_global_sr(
             local_straightening_threshold=color_correction_threshold,
             max_samples=color_correction_max_samples,
         )
-        raft_highres = apply_hhm_luts(raft_highres, color_luts, highres_regions.raft_region)
-        homography_warp = apply_hhm_luts(
-            homography_warp, color_luts,
-            cv.bitwise_or(highres_regions.raft_region, highres_regions.homography_region),
-        )
+        raft_highres = apply_hhm_luts(raft_highres, color_luts, raft_valid_highres)
+        homography_warp = apply_hhm_luts(homography_warp, color_luts, local_valid_highres)
     highres_result = _feather_three_sources(
         global_sr, raft_highres, homography_warp, highres_regions,
         feather_radius * scale_x,
+        source_valid_masks=(
+            np.full(global_sr.shape[:2], 255, np.uint8),
+            raft_valid_highres,
+            local_valid_highres,
+        ),
     )
     return CompositeResult(highres_result, homography_warp, highres_regions, correction_stats, color_luts)
