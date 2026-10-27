@@ -84,7 +84,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 ## 快速运行
 
-在 Python 3.10–3.12 环境中安装基础包，然后运行缓存复现。仓库内附 FSRCNN x4 权重，并缓存真实视频运行得到的运动掩膜、点线精修矩阵、RAFT 对齐结果及光流；程序会重新完成三区归属、Global x6 处理和高分辨率融合。
+Python 3.10–3.12 环境下，安装并运行缓存样例：
 
 ```bash
 git clone --recursive https://github.com/liuyuxiang1021/image_stitch.git
@@ -93,7 +93,14 @@ python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 ```
 
-输出在该样例的 `output/three_region/`：`final_result.jpg` 是诊断用的原画布结果（1070 × 786）；`final_result_global_fsrcnn_x6.jpg` 是完整当前 Global 画布的 x6 融合结果（6420 × 4716）；`final_result_local_roi_fsrcnn_x6.jpg` 是以 Local 投影范围为中心的近 4K 局部结果；`region_overlay_on_global_fsrcnn_x6.jpg` 和 `region_overlay_local_roi_fsrcnn_x6.jpg` 展示对应画布上的区域归属；`pure_stitch_local_roi_fsrcnn_x6.jpg` 是同一局部 ROI 的纯点线拼接结果；`raft_flow.npz` 缓存高分辨率 Local 重采样所需的光流。默认 x6 由 Global 先 Lanczos 插值 1.5 倍、再执行 FSRCNN x4 生成；可用 `--sr-mode global-fsrcnn-x4` 选择旧倍率，或用 `--sr-mode none` 跳过超分。完整点线匹配和 RAFT 重算需要模型安装，命令见[三分区域文档](docs/three_region_stitch.md)。纯拼接运行命令见[纯拼接文档](docs/image_stitch.md)。
+默认使用缓存的运动掩膜、单应性和 RAFT 结果，生成 x6 融合图（Lanczos ×1.5，再用 FSRCNN ×4）。输出位于样例的 `output/three_region/`：
+
+- `final_result.jpg`：原分辨率诊断图。
+- `final_result_global_fsrcnn_x6.jpg`：完整画布融合结果。
+- `final_result_local_roi_fsrcnn_x6.jpg`：Local 附近的近 4K 结果。
+- `region_overlay_*.jpg`：三区归属图；`pure_stitch_local_roi_fsrcnn_x6.jpg`：纯点线对照图。
+
+完整重算和纯拼接命令见[三分区域文档](docs/three_region_stitch.md)与[纯拼接文档](docs/image_stitch.md)。
 
 ## 同场景小规模评测
 
