@@ -31,14 +31,12 @@ def _channel_mapping(source: np.ndarray, reference: np.ndarray, coeff: float, th
     identity = np.arange(256, dtype=np.float64)
     mapping = identity + coeff * (matched - identity)
 
-    # HHM's local straightening suppresses mappings in the sparsest source or
-    # target intensity bins, then interpolates across those unstable ranges.
-    # The original implementation contained a comparison in place of an
-    # assignment for target bins; this implements the intended exclusion.
+    # Match the original HHM local-straightening behavior: suppress sparse
+    # source bins and interpolate across them. The legacy reference-bin loop
+    # was a no-op; invalidating those mapped values here collapses broad LUT
+    # ranges and creates a gray veil, so retain the source-bin behavior only.
     invalid = np.zeros(256, dtype=bool)
     invalid[_rare_bins(source_hist, threshold)] = True
-    rare_reference = _rare_bins(reference_hist, threshold)
-    invalid[np.isin(np.rint(mapping).astype(np.int16), rare_reference)] = True
     expanded = invalid.copy()
     expanded[1:] |= invalid[:-1]
     expanded[:-1] |= invalid[1:]
@@ -62,7 +60,7 @@ def fit_hhm_luts(
     paired_samples: Sequence[tuple[np.ndarray, np.ndarray, np.ndarray]],
     *,
     coeff: float = 1.0,
-    local_straightening_threshold: float = 0.5,
+    local_straightening_threshold: float = 0.05,
     max_samples: int = 400_000,
 ) -> tuple[np.ndarray, dict]:
     """Fit one BGR lookup table from paired aligned source/reference pixels.
@@ -152,7 +150,7 @@ def fit_hhm_for_regions(
     masks: Sequence[np.ndarray],
     *,
     coeff: float = 1.0,
-    local_straightening_threshold: float = 0.5,
+    local_straightening_threshold: float = 0.05,
     max_samples: int = 400_000,
 ) -> tuple[np.ndarray, dict]:
     """Fit HHM from pixels owned by each source region, paired to reference."""

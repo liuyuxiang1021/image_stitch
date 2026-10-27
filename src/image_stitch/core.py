@@ -196,7 +196,7 @@ def compose_pair(
     max_canvas_pixels: int = 100_000_000,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
-    color_correction_threshold: float = 0.5,
+    color_correction_threshold: float = 0.05,
     color_correction_max_samples: int = 400_000,
 ) -> StitchResult:
     transformed_source_corners = cv.perspectiveTransform(_corners(source), estimation.homography)
@@ -265,7 +265,7 @@ def stitch_pair(
     feather_power: float = 1.0,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
-    color_correction_threshold: float = 0.5,
+    color_correction_threshold: float = 0.05,
     color_correction_max_samples: int = 400_000,
     **estimation_options,
 ) -> StitchResult:

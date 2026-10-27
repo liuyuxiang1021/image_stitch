@@ -43,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feather-power", type=float, default=1.0)
     parser.add_argument("--no-color-correction", action="store_true", help="disable default HHM Local-to-Global color correction")
     parser.add_argument("--color-correction-coeff", type=float, default=1.0)
-    parser.add_argument("--color-correction-threshold", type=float, default=0.5)
+    parser.add_argument("--color-correction-threshold", type=float, default=0.05)
     return parser
 
 

@@ -109,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--no-color-correction", action="store_true", help="disable HHM color correction")
     parser.add_argument("--color-correction-coeff", type=float, default=1.0)
-    parser.add_argument("--color-correction-threshold", type=float, default=0.5)
+    parser.add_argument("--color-correction-threshold", type=float, default=0.05)
     parser.add_argument("--color-correction-max-samples", type=int, default=400_000)
     parser.add_argument(
         "--raft-open-kernel-size", type=int, default=DEFAULT_RAFT_OPEN_KERNEL_SIZE,

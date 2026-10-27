@@ -170,7 +170,7 @@ def compose_homography_over_background(
     color_luts: np.ndarray | None = None,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
-    color_correction_threshold: float = 0.5,
+    color_correction_threshold: float = 0.05,
     color_correction_max_samples: int = 400_000,
 ) -> np.ndarray:
     """Warp one source onto a full background canvas and feather its boundary."""
@@ -217,7 +217,7 @@ def compose_three_regions(
     raft_min_component_area: int = DEFAULT_RAFT_MIN_COMPONENT_AREA,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
-    color_correction_threshold: float = 0.5,
+    color_correction_threshold: float = 0.05,
     color_correction_max_samples: int = 400_000,
 ) -> CompositeResult:
     """Red=both motion, blue=flow-valid Local static, green=Global.
@@ -298,7 +298,7 @@ def compose_with_global_sr(
     raft_flow: np.ndarray | None = None,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,
-    color_correction_threshold: float = 0.5,
+    color_correction_threshold: float = 0.05,
     color_correction_max_samples: int = 400_000,
 ) -> CompositeResult:
     """Composite Local H/RAFT regions over a super-resolved Global background.

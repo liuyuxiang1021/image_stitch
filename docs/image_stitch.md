@@ -184,7 +184,7 @@ image-stitch source.jpg destination.jpg \
 --feather-power 1.0             羽化曲线指数
 --no-color-correction           关闭默认开启的 HHM 色差矫正
 --color-correction-coeff 1.0    HHM 映射系数，0 到 1
---color-correction-threshold 0.5 HHM 稀疏直方图阈值
+--color-correction-threshold 0.05 HHM 稀疏直方图阈值
 --device auto                   auto / cpu / cuda
 --gpu 0                         同时提供给 TensorFlow 与 PyTorch 的物理 GPU
 ```
