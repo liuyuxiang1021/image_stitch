@@ -10,13 +10,25 @@
 
 ## 1. 纯点线单应性拼接
 
-输入是 Local 和 Global 两张图像，可选相机标定初值 `H_init`。输出 `H_final`、投影和羽化融合图；融合前根据重叠区域估计 HHM 色彩映射，校正 Local 与 Global 的颜色差异。三个不同场景的输入、初值局部放大、点线匹配及最终输出见[纯拼接样例说明](docs/image_stitch.md)。
+### 算法流程
 
-流程：用 `H_init` 将 Local 投影到 Global 坐标系，在重叠区做 OmniGlue 点匹配和 LineTR 线匹配；过滤不可靠匹配后，联合优化点、线约束得到 `H_final`；根据 Local/Global 重叠像素估计 HHM 映射，校正 Local，再以 6 px 边缘羽化融合。
+输入 Local 和 Global 两张图像，可选标定初值 `H_init`；输出单应矩阵 `H_final` 和融合图。
+
+1. 用 `H_init` 将 Local 投影到 Global，确定重叠区域；没有初值时直接从两张图像估计。
+2. 用 OmniGlue 匹配点、LineTR 匹配线，过滤不可靠的匹配后共同优化，得到 `H_final`。
+3. 用 HHM 校正 Local 与 Global 的颜色差异，再投影 Local，并在边缘 6 px 范围内羽化融合。
+
+下面展示运动场 `20201024084037322_cam11` 样例；另外两组场景的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/image_stitch.md)。
+
+### 输入图像
 
 | Local 输入 | Global 输入 |
 | --- | --- |
 | <img src="examples/image_stitch/20201024084037322_cam11/input/local.jpg" width="480" alt="运动场 Local 原图"> | <img src="examples/image_stitch/20201024084037322_cam11/input/global.jpg" width="480" alt="运动场 Global 原图"> |
+
+### 最终拼接结果
+
+![运动场纯点线单应性拼接结果](examples/image_stitch/20201024084037322_cam11/output/panorama.jpg)
 
 ## 2. 运动感知三分区域拼接
 
@@ -26,13 +38,13 @@
 
 该方法主要处理不同景深的前景与背景在跨视角拼接时产生的视差错位。例如，树木、路灯杆等近景结构与远处地面背景的投影关系不同，单个全局单应性难以同时对齐两者，而人或车运动的区域一般认为是地面（背景部分），地面以上非运动的部分认为是景深较浅的前景部分，因此分区域进行拼接。
 
-**方法：**
-
-Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，两侧都检测到运动的重叠区域，通过点线匹配精修单应性后投影 Local；其他有效的 Local 重叠区域由 RAFT 光流对齐；其余部分使用 x6 处理后的 Global 背景。合成前从红、蓝两区共同采样，估计一套 HHM 色彩映射并同时校正两路 Local 来源。
-
 **输入与输出：**
 
 输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的视频片段。
+
+**方法：**
+
+Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，两侧都检测到运动的重叠区域，通过点线匹配精修单应性后投影 Local；其他有效的 Local 重叠区域由 RAFT 光流对齐；其余部分使用 x6 处理后的 Global 背景。合成前从红、蓝两区共同采样，估计一套 HHM 色彩映射并同时校正两路 Local 来源。
 
 1. **建立几何初值**：用 `H_init` 把 Local 映射到 Global 坐标系，作为两视角对齐的起点。
 2. **提取运动线索并精修单应性**：分别从两路视频生成运动掩膜。点线匹配只采用两侧都检测到运动的对应，用于精修 `H_init`，得到投影 Local 的单应性。
@@ -46,7 +58,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    | 绿色：Global 背景区 | 剩余区域，包括 Local 投影无效或 RAFT 检查失败的位置 | x6 处理后的 Global 背景 |
 
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
-5. **校正颜色并合成高分辨率结果**：将 Global 画布整体输出为 x6（Lanczos 插值 1.5 倍后执行 FSRCNN x4），并从红、蓝区域分别抽取与 Global 对齐的像素对，共同估计一套 HHM 映射；同一映射应用于单应性区和 RAFT 区，避免两区颜色不一致。纯点线单应性结果也根据其 Local/Global 重叠像素单独估计 HHM 映射。之后将原始 Local 内容合入 x6 画布，RAFT 光流位移和区域掩膜同步映射到高分辨率画布；仅在三区边界附近羽化，默认半径为原画布 6 px，即 x6 输出中的 36 px。
+5. **校正颜色并合成高分辨率结果**：Global 先放大 1.5 倍，再用 FSRCNN x4 生成 x6 背景。红、蓝两区共用一套 HHM 颜色校正；纯点线结果单独校正。最后将 Local 内容合入 x6 画布，并在区域边界羽化，半径为原画布 6 px。
 
 下面展示商街 `20220806141041707_cam11` 样例。Local/Global 输入、200 帧 ROI 视频、运动掩膜与 RAFT 缓存分别放在 `input/` 和 `cache/`；另外两组可运行样例见[三分区域样例说明](docs/three_region_stitch.md)。
 
@@ -60,11 +72,11 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 ### 区域归属与最终融合
 
+两图展示同一张 x6 Global 画布（6420 × 4716）：左图用颜色标出三区归属，右图是融合结果。
+
 | 三区归属图 | x6 最终融合 |
 | --- | --- |
 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="480" alt="商街三区归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="480" alt="商街 x6 最终融合"> |
-
-两图展示同一张 x6 Global 画布（6420 × 4716）：左图用颜色标出三区归属，右图是融合结果。
 
 ### Local 区域近 4K 拼接对照
 
@@ -99,7 +111,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 对五组入选的场景/相机样例，使用对应帧和 `H_init` 比较纯 OmniGlue + LineTR 与三分区域融合。样例为 `20210112134325996/cam15`、`20220806141041707/cam11`、`20220806141041707/cam21`、`20220806141041707/cam31` 和 `20250704164617116/cam15`。评测区域为 Local 投影范围外扩 24 px 原画布留白后的完整区域，表中数值是五组样例的算术平均。
 
 | 指标 | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
-| --- | ---: | ---: |
+| :---: | :---: | :---: |
 | PSNR（dB） | 20.171 | **21.910** |
 | SSIM | 0.6720 | **0.7028** |
 
