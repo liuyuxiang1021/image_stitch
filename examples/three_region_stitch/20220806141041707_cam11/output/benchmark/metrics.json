@@ -21,19 +21,19 @@
   "feather_radius_native_px": 6,
   "all_roi_methods": {
     "SIFT_RANSAC_H": {
-      "psnr_db": 16.665,
-      "ssim": 0.5552,
+      "psnr_db": 16.778,
+      "ssim": 0.5604,
       "ratio_test_matches": 232,
       "ransac_inliers": 200,
       "x6_crop": "output/benchmark/sift_ransac_local_roi_fsrcnn_x6.jpg"
     },
     "OmniGlue_LineTR_H": {
-      "psnr_db": 16.533,
-      "ssim": 0.5551
+      "psnr_db": 16.641,
+      "ssim": 0.5602
     },
     "three_region_final": {
-      "psnr_db": 17.395,
-      "ssim": 0.5879
+      "psnr_db": 18.128,
+      "ssim": 0.6076
     }
   },
   "interpretation_limit": "PSNR/SSIM measure similarity to the x6 Global reference over this ROI, not ground-truth stitching quality. Global-retained pixels in the three-region output match that reference by construction and affect these scores."
