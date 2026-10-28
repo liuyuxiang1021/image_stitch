@@ -1,0 +1,36 @@
+{
+  "sample": "20201025083303988_cam22",
+  "reference": "output/global_roi_lanczos_x6.jpg",
+  "shared_roi_native_xyxy": [
+    1046,
+    918,
+    1683,
+    1297
+  ],
+  "roi_size": [
+    3822,
+    2274
+  ],
+  "scale": 6,
+  "feather_radius_native_px": 6,
+  "sift_initial_roi_native_xyxy": [
+    987,
+    915,
+    1666,
+    1326
+  ],
+  "methods": {
+    "SIFT_RANSAC_H": {
+      "psnr_db": 26.337,
+      "ssim": 0.8035,
+      "ratio_test_matches": 90,
+      "ransac_inliers": 73,
+      "x6_crop": "output/benchmark/sift_ransac_local_roi_x6.jpg"
+    },
+    "OmniGlue_LineTR_H": {
+      "psnr_db": 26.317,
+      "ssim": 0.8051,
+      "x6_crop": "output/local_roi_x6.jpg"
+    }
+  }
+}

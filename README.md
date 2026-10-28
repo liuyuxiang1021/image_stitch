@@ -38,6 +38,15 @@
 | --- | --- |
 | <img src="examples/point_line_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="examples/point_line_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接结果"> |
 
+### 五组纯点线样例评测
+
+这五组以单个单应性拼接。SIFT + OpenCV RANSAC 基线与 OmniGlue + LineTR 点线方法使用相同的 `H_init`、Local ROI、Lanczos x6 Global 背景、HHM 校色和 6 px 边缘羽化。两种结果与同一 Global ROI 比较；表中为五组均值，逐组数据见[纯点线评测数据](examples/point_line_stitch/metrics.json)。
+
+| 指标 | SIFT + OpenCV RANSAC | 纯点线（OmniGlue + LineTR） |
+| :---: | :---: | :---: |
+| PSNR（dB） | 22.754 | 22.734 |
+| SSIM | 0.6510 | 0.6515 |
+
 ## 2. 运动感知三分区域拼接
 
 ### 算法流程
@@ -94,6 +103,15 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 | --- | --- |
 | <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="480" alt="商街纯点线局部拼接"> | <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="480" alt="商街三分区域局部融合"> |
 
+### 五组三分区域样例评测
+
+对五组入选样例比较 SIFT + OpenCV RANSAC、纯点线拼接与三分区域融合。SIFT 基线使用 `cv.findHomography` 求 H；纯点线方法先用 OpenCV RANSAC 求点匹配初值，再用本项目的点线联合优化精修 H。三者使用相同的 x6 Global 背景、HHM 校色和羽化。评测区域是各组 Local 投影范围外扩 24 px 后的局部，参照为同一区域的 x6 Global 背景；表中是五组结果的算术平均，逐组结果见[三分区域评测数据](examples/three_region_stitch/selected_1000f/metrics.json)。
+
+| 指标 | SIFT + OpenCV RANSAC | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
+| :---: | :---: | :---: | :---: |
+| PSNR（dB） | 20.469 | 20.626 | **23.043** |
+| SSIM | 0.6767 | 0.6834 | **0.7172** |
+
 ## 快速运行
 
 Python 3.10–3.12 环境下，安装并运行缓存样例：
@@ -113,15 +131,6 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 - `region_overlay_*.jpg`：三区归属图；`pure_stitch_local_roi_fsrcnn_x6.jpg`：纯点线对照图。
 
 完整重算和纯拼接命令见[三分区域文档](docs/three_region_stitch.md)与[纯拼接文档](docs/point_line_stitch.md)。
-
-## 同场景小规模评测
-
-对五组入选样例比较纯点线拼接与三分区域融合。评测区域是各组 Local 投影范围外扩 24 px 后的局部，参照为同一区域的 x6 Global 背景；表中是五组结果的算术平均，逐组结果见[评测数据](examples/three_region_stitch/selected_1000f/metrics.json)。
-
-| 指标 | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
-| :---: | :---: | :---: |
-| PSNR（dB） | 20.622 | **23.036** |
-| SSIM | 0.6830 | **0.7167** |
 
 ## 仓库结构
 

@@ -8,13 +8,17 @@
         2364
       ],
       "frame_count": 1000,
+      "sift": {
+        "psnr_db": 25.468,
+        "ssim": 0.8558
+      },
       "pure": {
-        "psnr_db": 26.48,
-        "ssim": 0.8806
+        "psnr_db": 26.484,
+        "ssim": 0.8809
       },
       "three_region": {
-        "psnr_db": 27.062,
-        "ssim": 0.8873
+        "psnr_db": 27.067,
+        "ssim": 0.8875
       }
     },
     {
@@ -24,6 +28,10 @@
         2364
       ],
       "frame_count": 1000,
+      "sift": {
+        "psnr_db": 18.263,
+        "ssim": 0.5912
+      },
       "pure": {
         "psnr_db": 17.807,
         "ssim": 0.5772
@@ -40,13 +48,17 @@
         2376
       ],
       "frame_count": 1000,
+      "sift": {
+        "psnr_db": 21.108,
+        "ssim": 0.6556
+      },
       "pure": {
-        "psnr_db": 21.026,
-        "ssim": 0.6531
+        "psnr_db": 21.03,
+        "ssim": 0.6543
       },
       "three_region": {
-        "psnr_db": 21.596,
-        "ssim": 0.6768
+        "psnr_db": 21.606,
+        "ssim": 0.6783
       }
     },
     {
@@ -56,6 +68,10 @@
         2388
       ],
       "frame_count": 1000,
+      "sift": {
+        "psnr_db": 15.637,
+        "ssim": 0.6219
+      },
       "pure": {
         "psnr_db": 15.932,
         "ssim": 0.6446
@@ -72,24 +88,32 @@
         2400
       ],
       "frame_count": 1000,
+      "sift": {
+        "psnr_db": 21.867,
+        "ssim": 0.6592
+      },
       "pure": {
-        "psnr_db": 21.863,
-        "ssim": 0.6593
+        "psnr_db": 21.876,
+        "ssim": 0.6599
       },
       "three_region": {
-        "psnr_db": 22.571,
-        "ssim": 0.6811
+        "psnr_db": 22.588,
+        "ssim": 0.6819
       }
     }
   ],
   "mean": {
+    "sift": {
+      "psnr_db": 20.469,
+      "ssim": 0.6767
+    },
     "pure": {
-      "psnr_db": 20.622,
-      "ssim": 0.683
+      "psnr_db": 20.626,
+      "ssim": 0.6834
     },
     "three_region": {
-      "psnr_db": 23.036,
-      "ssim": 0.7167
+      "psnr_db": 23.043,
+      "ssim": 0.7172
     }
   }
 }

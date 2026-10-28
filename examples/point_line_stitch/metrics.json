@@ -1,0 +1,90 @@
+{
+  "reference": "x6 Lanczos Global ROI, same Local ROI, JPEG outputs",
+  "samples": [
+    {
+      "sample": "20201024084037322_cam11",
+      "roi_size": [
+        4074,
+        2388
+      ],
+      "sift": {
+        "psnr_db": 19.905,
+        "ssim": 0.5607
+      },
+      "pure": {
+        "psnr_db": 20.503,
+        "ssim": 0.5733
+      }
+    },
+    {
+      "sample": "20201025083303988_cam22",
+      "roi_size": [
+        3822,
+        2274
+      ],
+      "sift": {
+        "psnr_db": 26.337,
+        "ssim": 0.8035
+      },
+      "pure": {
+        "psnr_db": 26.317,
+        "ssim": 0.8051
+      }
+    },
+    {
+      "sample": "20210313151132256_cam22",
+      "roi_size": [
+        3858,
+        2298
+      ],
+      "sift": {
+        "psnr_db": 25.645,
+        "ssim": 0.8195
+      },
+      "pure": {
+        "psnr_db": 25.436,
+        "ssim": 0.816
+      }
+    },
+    {
+      "sample": "20220806141041707_cam32",
+      "roi_size": [
+        3852,
+        2304
+      ],
+      "sift": {
+        "psnr_db": 22.734,
+        "ssim": 0.5805
+      },
+      "pure": {
+        "psnr_db": 22.727,
+        "ssim": 0.5799
+      }
+    },
+    {
+      "sample": "20220817171240976_cam35",
+      "roi_size": [
+        4104,
+        2388
+      ],
+      "sift": {
+        "psnr_db": 19.149,
+        "ssim": 0.4907
+      },
+      "pure": {
+        "psnr_db": 18.687,
+        "ssim": 0.4832
+      }
+    }
+  ],
+  "mean": {
+    "sift": {
+      "psnr_db": 22.754,
+      "ssim": 0.651
+    },
+    "pure": {
+      "psnr_db": 22.734,
+      "ssim": 0.6515
+    }
+  }
+}

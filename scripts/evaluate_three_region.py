@@ -10,67 +10,12 @@ import argparse
 import json
 from pathlib import Path
 
-import cv2 as cv
 import numpy as np
-from skimage.metrics import structural_similarity
 
 from point_line_stitch import load_homography
 from three_region_stitch.regions import compose_homography_over_background
 from three_region_stitch.visualization import compare_same_crop
-
-
-def read(path: Path, flags: int = cv.IMREAD_COLOR) -> np.ndarray:
-    image = cv.imread(str(path), flags)
-    if image is None:
-        raise FileNotFoundError(path)
-    return image
-
-
-def write_jpeg(path: Path, image: np.ndarray) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not cv.imwrite(str(path), image, [cv.IMWRITE_JPEG_QUALITY, 95]):
-        raise RuntimeError(f"Could not write {path}")
-
-
-def sift_homography(
-    local: np.ndarray,
-    global_frame: np.ndarray,
-    h_initial: np.ndarray,
-    roi: tuple[int, int, int, int],
-) -> tuple[np.ndarray, int, int]:
-    x0, y0, x1, y1 = roi
-    warped = cv.warpPerspective(local, h_initial, (global_frame.shape[1], global_frame.shape[0]))
-    source = cv.cvtColor(warped[y0:y1, x0:x1], cv.COLOR_BGR2GRAY)
-    target = cv.cvtColor(global_frame[y0:y1, x0:x1], cv.COLOR_BGR2GRAY)
-    detector = cv.SIFT_create(nfeatures=4000)
-    source_keypoints, source_descriptors = detector.detectAndCompute(source, None)
-    target_keypoints, target_descriptors = detector.detectAndCompute(target, None)
-    if source_descriptors is None or target_descriptors is None:
-        raise RuntimeError("SIFT detected no descriptors in one view")
-    matches = cv.BFMatcher(cv.NORM_L2).knnMatch(source_descriptors, target_descriptors, k=2)
-    good = [first for first, second in matches if first.distance < 0.75 * second.distance]
-    if len(good) < 4:
-        raise RuntimeError(f"SIFT has only {len(good)} ratio-test matches")
-    source_points = np.float32([source_keypoints[item.queryIdx].pt for item in good])
-    target_points = np.float32([target_keypoints[item.trainIdx].pt for item in good])
-    h_roi, inliers = cv.findHomography(source_points, target_points, cv.RANSAC, 4.0)
-    if h_roi is None or inliers is None or inliers.sum() < 4:
-        raise RuntimeError("SIFT/RANSAC could not estimate a homography")
-    full_to_roi = np.array([[1, 0, -x0], [0, 1, -y0], [0, 0, 1]], dtype=np.float64)
-    h_final = np.linalg.inv(full_to_roi) @ h_roi @ full_to_roi @ h_initial
-    return h_final, len(good), int(inliers.sum())
-
-
-def image_metrics(reference: np.ndarray, candidate: np.ndarray) -> dict[str, float]:
-    if reference.shape != candidate.shape:
-        raise ValueError(f"Metric image shapes differ: {reference.shape} vs {candidate.shape}")
-    delta = reference.astype(np.float32) - candidate.astype(np.float32)
-    mse = float(np.mean(delta * delta))
-    psnr = float("inf") if mse == 0 else float(10 * np.log10(255 ** 2 / mse))
-    ssim = float(structural_similarity(
-        reference, candidate, channel_axis=2, data_range=255,
-    ))
-    return {"psnr_db": round(psnr, 3), "ssim": round(ssim, 4)}
+from benchmark_common import image_metrics, read, sift_homography, write_jpeg
 
 
 def crop_scaled(
@@ -95,7 +40,10 @@ def main() -> None:
     local = read(example / "input/local.jpg")
     h_initial = load_homography(example / "input/H_init.npz")
     pure_metadata = json.loads((example / "output/pure_artifacts/metadata.json").read_text())
-    h_pure = np.asarray(pure_metadata["H_final"], dtype=np.float64)
+    h_pure = np.asarray(
+        pure_metadata.get("H_final", pure_metadata["homography_source_to_destination"]),
+        dtype=np.float64,
+    )
     h_sift, sift_matches, sift_inliers = sift_homography(local, global_frame, h_initial, input_roi)
 
     three_output = args.three_output or example / "output/three_region"

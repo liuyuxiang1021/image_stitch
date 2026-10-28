@@ -66,7 +66,14 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 
 ## 小规模全 ROI 评测
 
-五组样例分别在 Local 投影范围外扩 24 px 的区域内，与同范围的 x6 Global 背景比较，再对 PSNR、SSIM 取算术平均。逐组结果和尺寸见[评测数据](../examples/three_region_stitch/selected_1000f/metrics.json)。这组数值衡量输出与 Global 的相似程度，不代表有真值的拼接质量。
+五组样例分别在 Local 投影范围外扩 24 px 的区域内，与同范围的 x6 Global 背景比较，再对 PSNR、SSIM 取算术平均。SIFT 基线以相同的标定初值限定重叠区域，用 OpenCV SIFT、BFMatcher 和 `cv.findHomography(RANSAC)` 求 H；纯点线方法使用 OmniGlue 点、LineTR 线，先以 OpenCV RANSAC 求点匹配初值，再用本项目的 8 自由度点线联合优化精修 H。三种结果采用相同的 x6 背景、HHM 校色和 6 px 原画布羽化。逐组结果和尺寸见[评测数据](../examples/three_region_stitch/selected_1000f/metrics.json)。这组数值衡量输出与 Global 的相似程度，不代表有真值的拼接质量；两种单应性方法同时改变了匹配器和优化方式，因此不能由这张表单独归因各部分的贡献。
+
+| 指标（五组均值） | SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线拼接 | 三分区域融合 |
+| :---: | :---: | :---: | :---: |
+| PSNR（dB） | 20.469 | 20.626 | **23.043** |
+| SSIM | 0.6767 | 0.6834 | **0.7172** |
+
+可用 `python scripts/evaluate_three_region.py --example examples/three_region_stitch/selected_1000f/20220806141041707_cam11` 复算单组，再运行 `python scripts/aggregate_three_region_metrics.py` 汇总五组。
 
 ## 数据来源
 
