@@ -4,7 +4,7 @@
 
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
-| [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场两组、展厅、校园道路、商街各一组图像 |
+| [`point_line_stitch`](docs/point_line_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场两组、展厅、校园道路、商街各一组图像 |
 | [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 五组双视角样例，各含 1000 帧 ROI 视频 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
@@ -20,21 +20,21 @@
 
 纯拼接和三分区域中的纯单应性对照共用投影、HHM 校色与羽化代码；三分区域的 Global 背景另由 FSRCNN 生成。
 
-下面展示运动场 `20201024084037322_cam11` 样例；其余四组的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/image_stitch.md)。
+下面展示运动场 `20201024084037322_cam11` 样例；其余四组的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/point_line_stitch.md)。
 
 ### 输入图像
 
 | Local 输入 | Global 输入 |
 | --- | --- |
-| <img src="examples/image_stitch/20201024084037322_cam11/input/local.jpg" width="480" alt="运动场 Local 原图"> | <img src="examples/image_stitch/20201024084037322_cam11/input/global.jpg" width="480" alt="运动场 Global 原图"> |
+| <img src="examples/point_line_stitch/20201024084037322_cam11/input/local.jpg" width="480" alt="运动场 Local 原图"> | <img src="examples/point_line_stitch/20201024084037322_cam11/input/global.jpg" width="480" alt="运动场 Global 原图"> |
 
 ### 最终拼接结果
 
-两图为 Local 投影附近的同一范围（4086 × 2388）。左图是插值放大的 Global 背景，右图是保留原始 Local 细节的拼接结果。
+两图为 Local 投影附近的同一范围（4080 × 2388）。左图是插值放大的 Global 背景，右图是保留原始 Local 细节的拼接结果。
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| <img src="examples/image_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="examples/image_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接结果"> |
+| <img src="examples/point_line_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="examples/point_line_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接结果"> |
 
 ## 2. 运动感知三分区域拼接
 
@@ -110,7 +110,7 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 - `final_result_local_roi_fsrcnn_x6.jpg`：Local 附近的近 4K 结果。
 - `region_overlay_*.jpg`：三区归属图；`pure_stitch_local_roi_fsrcnn_x6.jpg`：纯点线对照图。
 
-完整重算和纯拼接命令见[三分区域文档](docs/three_region_stitch.md)与[纯拼接文档](docs/image_stitch.md)。
+完整重算和纯拼接命令见[三分区域文档](docs/three_region_stitch.md)与[纯拼接文档](docs/point_line_stitch.md)。
 
 ## 同场景小规模评测
 
@@ -124,9 +124,9 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 ## 仓库结构
 
 ```text
-src/image_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
+src/point_line_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
 src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享 HHM 与三区合图
-examples/image_stitch/           # 五组静态图像输入与输出
+examples/point_line_stitch/           # 五组静态图像输入与输出
 examples/three_region_stitch/    # 五组 1000 帧入选样例及三组旧版样例
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules

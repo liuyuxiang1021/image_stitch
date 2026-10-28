@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "image-stitch-point-line"
+name = "point-line-stitch"
 version = "0.1.0"
 description = "Point-line and motion-aware three-region image stitching"
 readme = "README.md"
@@ -26,7 +26,8 @@ dev = ["pytest>=7"]
 benchmark = ["scikit-image>=0.20"]
 
 [project.scripts]
-image-stitch = "image_stitch.cli:main"
+point-line-stitch = "point_line_stitch.cli:main"
+image-stitch = "point_line_stitch.cli:main"
 three-region-stitch = "three_region_stitch.cli:main"
 
 [tool.setuptools.packages.find]

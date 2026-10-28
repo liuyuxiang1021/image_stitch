@@ -1,41 +1,15 @@
-"""Point-line homography image stitching."""
+"""Compatibility imports for the former pure-stitching package name."""
 
-from .core import (
-    compose_pair,
-    estimate_homography,
-    load_homography,
-    refine_homography,
-    stitch_pair,
-)
-from .matchers import LineTRLineMatcher, OmniGluePointMatcher
-from .high_resolution import LocalROIResult, compose_local_roi, projected_local_roi
-from .optimization import estimate_point_line_homography, optimize_homography
-from .types import (
-    FeatureMatches,
-    HomographyEstimationError,
-    HomographyResult,
-    OptimizationDiagnostics,
-    StitchResult,
-)
+import sys
+from importlib import import_module
 
-__all__ = [
-    "HomographyEstimationError",
-    "FeatureMatches",
-    "HomographyResult",
-    "OptimizationDiagnostics",
-    "StitchResult",
-    "OmniGluePointMatcher",
-    "LineTRLineMatcher",
-    "LocalROIResult",
-    "compose_local_roi",
-    "projected_local_roi",
-    "compose_pair",
-    "estimate_homography",
-    "load_homography",
-    "refine_homography",
-    "stitch_pair",
-    "estimate_point_line_homography",
-    "optimize_homography",
-]
+from point_line_stitch import *  # noqa: F401,F403
+from point_line_stitch import __version__
 
-__version__ = "0.1.0"
+for _module in (
+    "cli", "color_correction", "core", "high_resolution", "matchers",
+    "optimization", "types", "visualization",
+):
+    sys.modules[f"{__name__}.{_module}"] = import_module(
+        f"point_line_stitch.{_module}"
+    )

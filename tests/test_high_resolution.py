@@ -3,7 +3,7 @@ import unittest
 import cv2 as cv
 import numpy as np
 
-from image_stitch import compose_local_roi
+from point_line_stitch import compose_local_roi
 
 
 class HighResolutionTests(unittest.TestCase):

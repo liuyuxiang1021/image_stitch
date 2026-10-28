@@ -14,7 +14,7 @@ import cv2 as cv
 import numpy as np
 from skimage.metrics import structural_similarity
 
-from image_stitch import load_homography
+from point_line_stitch import load_homography
 from three_region_stitch.regions import compose_homography_over_background
 from three_region_stitch.visualization import compare_same_crop
 

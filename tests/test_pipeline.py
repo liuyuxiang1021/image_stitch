@@ -5,8 +5,8 @@ from tempfile import TemporaryDirectory
 import cv2 as cv
 import numpy as np
 
-from image_stitch import load_homography, refine_homography, stitch_pair
-from image_stitch.core import _feather_pair
+from point_line_stitch import load_homography, refine_homography, stitch_pair
+from point_line_stitch.core import _feather_pair
 
 
 class StaticPointMatcher:

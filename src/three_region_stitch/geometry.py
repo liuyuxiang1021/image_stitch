@@ -7,9 +7,9 @@ from dataclasses import dataclass
 import cv2 as cv
 import numpy as np
 
-from image_stitch.core import collect_matches
-from image_stitch.optimization import estimate_point_line_homography
-from image_stitch.types import FeatureMatches, HomographyEstimationError
+from point_line_stitch.core import collect_matches
+from point_line_stitch.optimization import estimate_point_line_homography
+from point_line_stitch.types import FeatureMatches, HomographyEstimationError
 
 
 @dataclass(frozen=True)

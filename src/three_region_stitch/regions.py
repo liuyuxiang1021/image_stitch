@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import cv2 as cv
 import numpy as np
 
-from image_stitch.color_correction import apply_hhm_luts, fit_hhm_for_regions
-from image_stitch.high_resolution import render_homography_on_background
+from point_line_stitch.color_correction import apply_hhm_luts, fit_hhm_for_regions
+from point_line_stitch.high_resolution import render_homography_on_background
 
 
 DEFAULT_RAFT_OPEN_KERNEL_SIZE = 3

@@ -1,0 +1,183 @@
+{
+  "source": "examples/point_line_stitch/20210313151132256_cam22/input/local.jpg",
+  "destination": "examples/point_line_stitch/20210313151132256_cam22/input/global.jpg",
+  "mode": "refine_initial_h",
+  "homography_source_to_destination": [
+    [
+      0.1662091065414525,
+      0.0005283802851113762,
+      1081.9448765061431
+    ],
+    [
+      0.0036209129693497923,
+      0.15766199896946412,
+      997.4950003530773
+    ],
+    [
+      4.430990116877755e-06,
+      -7.06903999133063e-07,
+      1.0340490312686161
+    ]
+  ],
+  "source_to_canvas": [
+    [
+      0.1662091065414525,
+      0.0005283802851113762,
+      1081.9448765061431
+    ],
+    [
+      0.0036209129693497923,
+      0.15766199896946412,
+      997.4950003530773
+    ],
+    [
+      4.430990116877755e-06,
+      -7.06903999133063e-07,
+      1.0340490312686161
+    ]
+  ],
+  "destination_to_canvas": [
+    [
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "panorama_size": [
+    3840,
+    2160
+  ],
+  "blending": {
+    "mode": "local_edge_feather",
+    "feather_width_pixels": 6.0,
+    "feather_power": 1.0
+  },
+  "color_correction": {
+    "method": "HHM",
+    "applied": true,
+    "reason": "ok",
+    "coeff": 1.0,
+    "local_straightening_threshold": 0.05,
+    "paired_pixels_available": 194085,
+    "paired_pixels_sampled": 194085,
+    "paired_pixels_by_source_region": [
+      194085
+    ],
+    "mapping_shared_across_source_regions": false
+  },
+  "matching": {
+    "omniglue_confidence_threshold": 0.1,
+    "points_before_filter": 632,
+    "points_after_filter": 631,
+    "lines_before_filter": 121,
+    "lines_after_filter": 119,
+    "point_rmse": 1.291853427886963,
+    "line_rmse": 1.11768639087677,
+    "optimization_iterations": 4,
+    "point_weight": 0.5,
+    "line_weight": 0.5
+  },
+  "initial_h_input": "examples/point_line_stitch/20210313151132256_cam22/input/H_init.npz",
+  "H_init": [
+    [
+      0.17474368833258494,
+      -0.00047324268862978413,
+      1052.3431179153447
+    ],
+    [
+      0.004984000168335629,
+      0.1645652358818432,
+      981.3353661107651
+    ],
+    [
+      6.007924126315787e-06,
+      -3.8490862500820813e-07,
+      1.0340501267734101
+    ]
+  ],
+  "H_delta": [
+    [
+      0.9483946534883474,
+      0.0061142996823777395,
+      75.34268340138942
+    ],
+    [
+      -0.008818093222903205,
+      0.9581766883123498,
+      64.29281049747726
+    ],
+    [
+      -9.359763379163865e-06,
+      -1.956938171252679e-06,
+      1.0113814595681652
+    ]
+  ],
+  "H_final": [
+    [
+      0.1662091065414525,
+      0.0005283802851113762,
+      1081.9448765061431
+    ],
+    [
+      0.0036209129693497923,
+      0.15766199896946412,
+      997.4950003530773
+    ],
+    [
+      4.430990116877755e-06,
+      -7.06903999133063e-07,
+      1.0340490312686161
+    ]
+  ],
+  "local_roi_output": {
+    "path": "examples/point_line_stitch/20210313151132256_cam22/output/local_roi_x6.jpg",
+    "global_roi_xyxy": [
+      1022,
+      938,
+      1665,
+      1321
+    ],
+    "scale": 6,
+    "size": [
+      3858,
+      2298
+    ],
+    "background": "Global Lanczos interpolation",
+    "background_path": "examples/point_line_stitch/20210313151132256_cam22/output/global_roi_lanczos_x6.jpg",
+    "color_correction": {
+      "method": "HHM",
+      "applied": true,
+      "reason": "ok",
+      "coeff": 1.0,
+      "local_straightening_threshold": 0.05,
+      "paired_pixels_available": 6987584,
+      "paired_pixels_sampled": 400000,
+      "paired_pixels_by_source_region": [
+        6987584
+      ],
+      "mapping_shared_across_source_regions": false
+    }
+  },
+  "initial_projection_roi_xywh": [
+    986,
+    915,
+    677,
+    411
+  ],
+  "final_projection_roi_canvas_xywh": [
+    1015,
+    931,
+    658,
+    397
+  ]
+}

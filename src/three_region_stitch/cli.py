@@ -10,7 +10,7 @@ from pathlib import Path
 import cv2 as cv
 import numpy as np
 
-from image_stitch import load_homography, projected_local_roi
+from point_line_stitch import load_homography, projected_local_roi
 
 from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
@@ -126,7 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-area", type=int, default=240)
     parser.add_argument(
         "--pure-output", type=Path,
-        help="pure image-stitch output with metadata for same-canvas comparison",
+        help="pure point-line-stitch output with metadata for same-canvas comparison",
     )
     return parser
 
@@ -184,7 +184,7 @@ def main(argv=None) -> int:
         h_final = load_homography(caches["reference_final_homography"])
         geometry_info["source"] = "cached_point_line_motion_homography"
     else:
-        from image_stitch import LineTRLineMatcher, OmniGluePointMatcher
+        from point_line_stitch import LineTRLineMatcher, OmniGluePointMatcher
 
         point_matcher = OmniGluePointMatcher(
             args.model_dir, confidence_threshold=0.1, omniglue_root=args.omniglue_root,

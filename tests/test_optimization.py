@@ -3,7 +3,7 @@ import unittest
 import cv2 as cv
 import numpy as np
 
-from image_stitch import FeatureMatches, estimate_point_line_homography
+from point_line_stitch import FeatureMatches, estimate_point_line_homography
 
 
 class OptimizationTests(unittest.TestCase):

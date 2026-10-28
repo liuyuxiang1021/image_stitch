@@ -48,7 +48,7 @@ bash scripts/setup_raft.sh
 three-region-stitch --example examples/three_region_stitch/selected_1000f/20220806141041707_cam11 --recompute-all --gpu 0
 ```
 
-安装脚本优先直连下载；只有本机直连失败时才重试当前网络配置。RAFT 权重来自[官方 RAFT 仓库](https://github.com/princeton-vl/RAFT)，OmniGlue 和 LineTR 的准备见[纯拼接说明](image_stitch.md)。没有 NVIDIA GPU 时可设 `--device cpu`，推理耗时会增加。
+安装脚本优先直连下载；只有本机直连失败时才重试当前网络配置。RAFT 权重来自[官方 RAFT 仓库](https://github.com/princeton-vl/RAFT)，OmniGlue 和 LineTR 的准备见[纯拼接说明](point_line_stitch.md)。没有 NVIDIA GPU 时可设 `--device cpu`，推理耗时会增加。
 
 ## 五组入选样例的输出
 
