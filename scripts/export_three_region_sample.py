@@ -97,7 +97,9 @@ def main() -> None:
     local_video = _open_at(metadata["local_video_path"], args.start_frame)
     global_video = _open_at(metadata["global_video_path"], args.start_frame)
     input_dir = args.output / "input"
+    cache_dir = args.output / "cache"
     input_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
     roi_width, roi_height = bx1 - bx0, by1 - by0
     local_path = input_dir / "local_init_roi.mp4"
     global_path = input_dir / "global_roi.mp4"
@@ -160,7 +162,7 @@ def main() -> None:
         _finish_video(global_writer, global_path)
 
     np.savez_compressed(input_dir / "H_init.npz", H=h_initial_sample)
-    np.savez_compressed(input_dir / "H_final_reference.npz", H=h_final_sample)
+    np.savez_compressed(cache_dir / "H_final_reference.npz", H=h_final_sample)
     manifest = {
         "scene": metadata["scene_name"],
         "camera": metadata["camera_name"],
@@ -176,12 +178,26 @@ def main() -> None:
             "local_frame": "input/local.jpg",
             "global_frame": "input/global.jpg",
             "initial_homography": "input/H_init.npz",
-            "reference_final_homography": "input/H_final_reference.npz",
             "local_initial_projection_roi_video": "input/local_init_roi.mp4",
             "global_initial_projection_roi_video": "input/global_roi.mp4",
         },
+        "cache": {
+            "reference_final_homography": "cache/H_final_reference.npz",
+            "local_motion_mask": "cache/local_motion_init_mask.png",
+            "global_motion_mask": "cache/global_motion_mask.png",
+            "raft_warped": "cache/raft_warped.jpg",
+            "raft_valid_mask": "cache/raft_valid_mask.png",
+            "raft_flow": "cache/raft_flow.npz",
+        },
+        "outputs": {
+            "pure_stitch": "output/pure_stitch.jpg",
+            "pure_diagnostics": "output/pure_artifacts/",
+            "three_region": "output/three_region/",
+            "benchmark": "output/benchmark/",
+        },
         "note": "ROI videos are actual camera frames cropped into H_init coordinates; "
-                "they are intended for independent motion-mask computation.",
+                "they are intended for independent motion-mask computation. Derived masks, "
+                "homographies, and RAFT alignment data are stored in cache/.",
     }
     (args.output / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",

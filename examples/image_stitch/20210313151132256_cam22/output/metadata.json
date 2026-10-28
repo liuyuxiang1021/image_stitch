@@ -59,7 +59,7 @@
   ],
   "blending": {
     "mode": "local_edge_feather",
-    "feather_width_pixels": 32.0,
+    "feather_width_pixels": 6.0,
     "feather_power": 1.0,
     "color_correction": "HHM estimated from valid Local/Global overlap"
   },
@@ -144,7 +144,7 @@
     "applied": true,
     "reason": "ok",
     "coeff": 1.0,
-    "local_straightening_threshold": 0.5,
+    "local_straightening_threshold": 0.05,
     "paired_pixels_available": 194087,
     "paired_pixels_sampled": 194087,
     "paired_pixels_by_source_region": [

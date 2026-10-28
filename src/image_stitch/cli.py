@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ransac-threshold", type=float, default=4.0)
     parser.add_argument("--line-distance-threshold", type=float, default=12.0)
     parser.add_argument("--line-angle-threshold", type=float, default=15.0)
-    parser.add_argument("--feather-width", type=float, default=32.0)
+    parser.add_argument("--feather-width", type=float, default=6.0)
     parser.add_argument("--feather-power", type=float, default=1.0)
     parser.add_argument("--no-color-correction", action="store_true", help="disable default HHM Local-to-Global color correction")
     parser.add_argument("--color-correction-coeff", type=float, default=1.0)

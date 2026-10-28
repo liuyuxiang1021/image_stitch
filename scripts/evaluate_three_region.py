@@ -82,19 +82,6 @@ def crop_scaled(
     return image[y0 * scale:y1 * scale, x0 * scale:x1 * scale]
 
 
-def error_heatmap(
-    reference: np.ndarray,
-    candidate: np.ndarray,
-    max_error: float = 80.0,
-) -> np.ndarray:
-    """Return an unframed color map of mean absolute RGB error."""
-    if reference.shape != candidate.shape:
-        raise ValueError(f"Heatmap image shapes differ: {reference.shape} vs {candidate.shape}")
-    error = np.abs(reference.astype(np.float32) - candidate.astype(np.float32)).mean(axis=2)
-    normalized = (np.clip(error, 0, max_error) * 255 / max_error).astype(np.uint8)
-    return cv.applyColorMap(normalized, cv.COLORMAP_TURBO)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--example", type=Path, required=True)
@@ -121,8 +108,7 @@ def main() -> None:
     roi_width = (x1 - x0) * scale
     roi_height = (y1 - y0) * scale
 
-    # Keep the existing native-resolution diagnostic output, separate from the
-    # x6 near-4K metrics and heatmaps below.
+    # Keep native-resolution diagnostic outputs separate from the x6 near-4K metrics.
     pure_native = compose_homography_over_background(global_frame, local, h_pure, feather_radius)
     sift_native = compose_homography_over_background(global_frame, local, h_sift, feather_radius)
     three_native = read(three_output / "final_result.jpg")
@@ -200,14 +186,6 @@ def main() -> None:
         ),
     }
 
-    write_jpeg(
-        benchmark_dir / "pure_stitch_error_heatmap_x6.jpg",
-        error_heatmap(reference_crop, pure_crop),
-    )
-    write_jpeg(
-        benchmark_dir / "three_region_error_heatmap_x6.jpg",
-        error_heatmap(reference_crop, three_crop),
-    )
     (benchmark_dir / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
     )

@@ -166,8 +166,10 @@ def main(argv=None) -> int:
     example = args.example.resolve()
     manifest = json.loads((example / "manifest.json").read_text(encoding="utf-8"))
     inputs = {key: example / value for key, value in manifest["inputs"].items()}
+    caches = {key: example / value for key, value in manifest.get("cache", {}).items()}
     output = args.output.resolve() if args.output else example / "output" / "three_region"
     output.mkdir(parents=True, exist_ok=True)
+    (example / "cache").mkdir(parents=True, exist_ok=True)
     local = _read_image(inputs["local_frame"])
     global_frame = _read_image(inputs["global_frame"])
     h_initial = load_homography(inputs["initial_homography"])
@@ -178,8 +180,8 @@ def main(argv=None) -> int:
         args.close_kernel, args.min_area,
     )
     if args.motion_mode == "cached":
-        local_motion = _read_image(example / "input/local_motion_init_mask.png", cv.IMREAD_GRAYSCALE)
-        global_motion = _read_image(example / "input/global_motion_mask.png", cv.IMREAD_GRAYSCALE)
+        local_motion = _read_image(caches["local_motion_mask"], cv.IMREAD_GRAYSCALE)
+        global_motion = _read_image(caches["global_motion_mask"], cv.IMREAD_GRAYSCALE)
         motion_frames = manifest["frame_count"]
     else:
         print("Detecting Local motion from the initial-projection ROI video...", flush=True)
@@ -190,10 +192,12 @@ def main(argv=None) -> int:
             raise ValueError("Local and Global motion clips have different frame counts")
         local_motion, global_motion = local_result.mask, global_result.mask
         motion_frames = local_result.frame_count
+        _write_image(caches["local_motion_mask"], local_motion)
+        _write_image(caches["global_motion_mask"], global_motion)
 
     geometry_info: dict = {"mode": args.geometry_mode}
     if args.geometry_mode == "cached":
-        h_final = load_homography(inputs["reference_final_homography"])
+        h_final = load_homography(caches["reference_final_homography"])
         geometry_info["source"] = "cached_point_line_motion_homography"
     else:
         from image_stitch import LineTRLineMatcher, OmniGluePointMatcher
@@ -208,6 +212,7 @@ def main(argv=None) -> int:
             point_matcher, line_matcher,
         )
         h_final = estimate.h_final
+        np.savez_compressed(caches["reference_final_homography"], H=h_final)
         geometry_info.update({
             "points_before_mask": estimate.points_before_mask,
             "points_after_mask": estimate.points_after_mask,
@@ -224,11 +229,11 @@ def main(argv=None) -> int:
     )
     raft_flow = None
     if args.flow_mode == "cached":
-        raft_warped = _read_image(example / "input/raft_warped.jpg")
-        raft_valid = _read_image(example / "input/raft_valid_mask.png", cv.IMREAD_GRAYSCALE)
-        flow_paths = [inputs.get("raft_flow")]
-        flow_paths.extend((output / "raft_flow.npz", example / "output" / "three_region" / "raft_flow.npz"))
-        flow_path = next((path for path in flow_paths if path is not None and path.is_file()), None)
+        raft_warped = _read_image(caches["raft_warped"])
+        raft_valid = _read_image(caches["raft_valid_mask"], cv.IMREAD_GRAYSCALE)
+        flow_path = caches.get("raft_flow")
+        if flow_path is not None and not flow_path.is_file():
+            flow_path = None
         if flow_path is not None:
             with np.load(flow_path) as cached_flow:
                 raft_flow = cached_flow["flow"].astype(np.float32, copy=False)
@@ -244,6 +249,10 @@ def main(argv=None) -> int:
             global_frame, prepared.homography_warp, prepared.valid_local,
             prepared.static_candidate, raft,
         )
+        _write_image(caches["raft_warped"], raft_warped)
+        _write_image(caches["raft_valid_mask"], raft_valid)
+        if raft_flow is not None:
+            np.savez_compressed(caches["raft_flow"], flow=raft_flow.astype(np.float32, copy=False))
     composed = compose_three_regions(
         global_frame, local, h_initial, h_final, roi,
         local_motion, global_motion, raft_warped, raft_valid,
@@ -257,12 +266,6 @@ def main(argv=None) -> int:
         color_correction_max_samples=args.color_correction_max_samples,
     )
 
-    _write_image(output / "local_motion_init_mask.png", local_motion)
-    _write_image(output / "global_motion_mask.png", global_motion)
-    _write_image(output / "raft_warped.jpg", raft_warped)
-    _write_image(output / "raft_valid_mask.png", raft_valid)
-    if raft_flow is not None:
-        np.savez_compressed(output / "raft_flow.npz", flow=raft_flow.astype(np.float32, copy=False))
     _write_image(output / "homography_warp.jpg", composed.homography_warp)
     _write_image(output / "region_global_mask.png", composed.regions.global_region)
     _write_image(output / "region_raft_mask.png", composed.regions.raft_region)

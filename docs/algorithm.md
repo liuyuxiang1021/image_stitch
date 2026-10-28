@@ -41,14 +41,17 @@ p_destination ~ H · p_source
 
 融合前，在 Local 与 Global 有效重叠区统计配对像素，按 B、G、R 通道估计 HHM 直方图映射，并将映射应用于投影后的 Local。这样只调整 Local 的颜色分布，不改变几何位置；映射系数可设为 0 关闭校正，CLI 也可用 `--no-color-correction` 完全关闭。
 
-融合以目标图为背景，只在源图投影边界内侧的有限宽度区域做羽化。设源图像素到其掩膜边界的距离为 `d`，羽化宽度为 `w`，则重叠区的源图权重为：
+融合时先将 Local 和 Global 的像素归属掩膜按高斯核模糊，再把两侧权重归一化后加权求和。羽化只发生在两种来源的边界附近：
 
 ```text
-alpha_local = clip(d / w, 0, 1) ^ feather_power
-alpha_global = 1 - alpha_local
+local_weight = blur(local_owner_mask) ^ feather_power
+global_weight = blur(global_owner_mask) ^ feather_power
+weight_local = local_weight / (local_weight + global_weight)
+weight_global = 1 - weight_local
+result = weight_local * local + weight_global * global
 ```
 
-默认 `w = 32` 个输出像素。因此源图只在边缘 32 px 内从 global 平滑过渡，内部权重为 100%；不与目标图重叠的源图区域也保持 100%。`--feather-width 0` 表示关闭羽化并直接覆盖。
+默认羽化半径为 6 个输出像素，边界两侧各在约 6 px 范围内由一种来源平滑过渡到另一种。羽化带中的无效投影像素先用最近的有效源像素补齐，避免黑边。`--feather-width 0` 表示关闭羽化并直接覆盖。
 
 ## 6. 方法边界
 

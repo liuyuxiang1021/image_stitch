@@ -5,12 +5,14 @@
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
 | [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场、展厅、校园道路各一组图像 |
-| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 商街人群双视角 200 帧短视频 |
+| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 商街、城市道路、运动场三个双视角 200 帧样例 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
 ## 1. 纯点线单应性拼接
 
 输入是 Local 和 Global 两张图像，可选相机标定初值 `H_init`。输出 `H_final`、投影和羽化融合图；融合前根据重叠区域估计 HHM 色彩映射，校正 Local 与 Global 的颜色差异。三个不同场景的输入、初值局部放大、点线匹配及最终输出见[纯拼接样例说明](docs/image_stitch.md)。
+
+流程：用 `H_init` 将 Local 投影到 Global 坐标系，在重叠区做 OmniGlue 点匹配和 LineTR 线匹配；过滤不可靠匹配后，联合优化点、线约束得到 `H_final`；根据 Local/Global 重叠像素估计 HHM 映射，校正 Local，再以 6 px 边缘羽化融合。
 
 | Local 输入 | Global 输入 |
 | --- | --- |
@@ -46,41 +48,13 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
 5. **校正颜色并合成高分辨率结果**：将 Global 画布整体输出为 x6（Lanczos 插值 1.5 倍后执行 FSRCNN x4），并从红、蓝区域分别抽取与 Global 对齐的像素对，共同估计一套 HHM 映射；同一映射应用于单应性区和 RAFT 区，避免两区颜色不一致。纯点线单应性结果也根据其 Local/Global 重叠像素单独估计 HHM 映射。之后将原始 Local 内容合入 x6 画布，RAFT 光流位移和区域掩膜同步映射到高分辨率画布；仅在三区边界附近羽化，默认半径为原画布 6 px，即 x6 输出中的 36 px。
 
-当前展示这一组商街样例。Local 输入保留相机原始的 3840 × 2160 分辨率；Local/Global 输入、200 帧 ROI 视频、缓存的掩膜/RAFT 中间结果、最终图和同一局部 ROI 对照均在仓库中。视频是真实相机帧，不是合成运动。详见[三分区域算法、数据与复现](docs/three_region_stitch.md)。
+样例包含商街人群、城市道路和运动场人群三个同步双视角场景。Local/Global 输入、200 帧 ROI 视频、运动掩膜与 RAFT 缓存均按 `input/`、`cache/`、`output/` 分开放置。下面展示各场景 x6 Global 背景上的区域归属图及最终融合图；相同 Local ROI 的纯点线与三分区域对照见[三分区域样例说明](docs/three_region_stitch.md)。
 
-### 商街人群 · `20220806141041707_cam11`
-
-#### 输入图像
-
-| Local 输入 | Global 输入 |
-| --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local 全幅输入"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global 输入"> |
-
-两图是同步的 Frame 6000 输入：Local 为相机原始全幅（3840 × 2160），Global 为去畸变并裁剪后的输入（1070 × 786）。
-
-#### 区域归属与最终融合
-
-| 三区归属图 | 最终融合结果 |
-| --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="480" alt="商街三区区域归属图 x6"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="480" alt="商街最终高分辨率融合结果 x6"> |
-
-左图叠加在 x6 Global 背景上，以硬掩膜颜色显示归属：红色为 Local 与 Global 双运动掩膜交集内且 Local 投影有效的单应性区，蓝色为红区外通过 RAFT 前后向一致性检查的 Local 区域，绿色由 Global 保留。右图以相同的 x6 Global 为背景合入 Local 内容。红、蓝区域共同估计一套 HHM 色彩映射，并应用到两路 Local 来源；区域交界处再做高斯羽化（原画布半径 6 px，放大后 36 px）。x6 Global 由 1.5 倍 Lanczos 插值和 FSRCNN x4 两步生成；Local 投影直接使用原始图像，避免先低分辨率融合再放大。
-
-#### Local 区域近 4K 拼接对照
-
-| 纯点线单应性拼接 | 三分区域融合 |
-| --- | --- |
-| [<img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="480" alt="商街纯点线拼接 Local 局部 x6">](examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg) | [<img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="480" alt="商街三分区域融合 Local 局部 x6">](examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg) |
-
-左图是纯点线单应性拼接结果，右图是三分区域融合结果。两图均从完整 x6 结果中按 Local 投影范围加 24 px 原画布留白后裁出，尺寸一致，为 **4080 × 2352**。
-
-#### 全 ROI 误差热图
-
-| 纯点线单应性拼接 | 三分区域融合 |
-| --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/output/benchmark/pure_stitch_error_heatmap_x6.jpg" width="480" alt="商街纯点线全 ROI 误差热图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/benchmark/three_region_error_heatmap_x6.jpg" width="480" alt="商街三分区域全 ROI 误差热图"> |
-
-两张图分别显示对应 x6 拼接结果相对 x6 Global 背景的平均 RGB 绝对差，颜色由蓝到红表示误差由小到大；图片独立保存，不带标题框。
+| 场景 | 三区归属图 | x6 最终融合 |
+| --- | --- | --- |
+| 商街人群 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="商街三区归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="商街 x6 融合结果"> |
+| 城市道路 | <img src="examples/three_region_stitch/20210304162543165_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="道路三区归属图"> | <img src="examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="道路 x6 融合结果"> |
+| 运动场人群 | <img src="examples/three_region_stitch/20220601174105159_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="运动场三区归属图"> | <img src="examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="运动场 x6 融合结果"> |
 
 ## 快速运行
 
@@ -93,7 +67,7 @@ python -m pip install -e .
 three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
 ```
 
-默认使用缓存的运动掩膜、单应性和 RAFT 结果，生成 x6 融合图（Lanczos ×1.5，再用 FSRCNN ×4）。输出位于样例的 `output/three_region/`：
+默认读取 `cache/` 中的运动掩膜、单应性和 RAFT 结果，生成 x6 融合图（Lanczos ×1.5，再用 FSRCNN ×4）。输出位于样例的 `output/three_region/`：
 
 - `final_result.jpg`：原分辨率诊断图。
 - `final_result_global_fsrcnn_x6.jpg`：完整画布融合结果。
@@ -119,7 +93,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 src/image_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
 src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享 HHM 与三区合图
 examples/image_stitch/           # 三组静态图像输入与输出
-examples/three_region_stitch/    # 三组双视角视频输入与输出
+examples/three_region_stitch/    # 三组样例，各自分 input/、cache/、output/
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules
 scripts/                         # 模型准备、样例导出、评测

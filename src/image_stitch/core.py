@@ -160,30 +160,86 @@ def _corners(image: np.ndarray) -> np.ndarray:
     return np.float32([[0, 0], [width, 0], [width, height], [0, height]]).reshape(-1, 1, 2)
 
 
-def _local_blend_alpha(
+def _extend_to_feather_band(
+    image: np.ndarray,
+    valid_mask: np.ndarray,
+    radius: int,
+) -> np.ndarray:
+    """Fill only the narrow feather band from each image's nearest valid pixel."""
+    valid = valid_mask > 0
+    if radius <= 0 or not np.any(valid) or np.all(valid):
+        return image
+    ys, xs = np.nonzero(valid)
+    height, width = valid.shape
+    x0 = max(0, int(xs.min()) - radius)
+    x1 = min(width, int(xs.max()) + radius + 1)
+    y0 = max(0, int(ys.min()) - radius)
+    y1 = min(height, int(ys.max()) + radius + 1)
+    valid_crop = valid[y0:y1, x0:x1]
+    if np.all(valid_crop):
+        return image
+
+    distance_input = np.where(valid_crop, 0, 255).astype(np.uint8)
+    _, labels = cv.distanceTransformWithLabels(
+        distance_input, cv.DIST_L2, 5, labelType=cv.DIST_LABEL_PIXEL,
+    )
+    valid_labels = labels[valid_crop]
+    lookup = np.zeros((int(labels.max()) + 1,) + image.shape[2:], dtype=image.dtype)
+    lookup[valid_labels] = image[y0:y1, x0:x1][valid_crop]
+    extended = image.copy()
+    extended[y0:y1, x0:x1] = lookup[labels]
+    return extended
+
+
+def _feather_pair(
+    source: np.ndarray,
+    destination: np.ndarray,
     source_mask: np.ndarray,
     destination_mask: np.ndarray,
-    feather_width: float,
-    feather_power: float,
+    radius: float,
+    power: float,
 ) -> np.ndarray:
-    """Blend local over global, feathering only inside the local boundary."""
-    if feather_width < 0:
+    """Blend two image owners with normalized Gaussian weights near boundaries."""
+    if radius < 0:
         raise ValueError("feather_width must be non-negative")
-    if feather_power <= 0:
+    if power <= 0:
         raise ValueError("feather_power must be positive")
-    padded = cv.copyMakeBorder(
-        source_mask, 1, 1, 1, 1, cv.BORDER_CONSTANT, value=0
+    valid_source = source_mask > 0
+    valid_destination = destination_mask > 0
+    valid = valid_source | valid_destination
+    if radius == 0:
+        result = destination.copy()
+        result[valid_source] = source[valid_source]
+        return result
+
+    blur_radius = max(1, int(np.ceil(radius)))
+    kernel = 2 * blur_radius + 1
+    sigma = max(radius / 2.0, 1.0)
+    source_owner = valid_source
+    destination_owner = valid_destination & ~valid_source
+    source_weight = cv.GaussianBlur(
+        source_owner.astype(np.float32), (kernel, kernel), sigmaX=sigma,
     )
-    distance = cv.distanceTransform(padded, cv.DIST_L2, 5)[1:-1, 1:-1]
-    source_valid = source_mask > 0
-    destination_valid = destination_mask > 0
-    alpha = np.zeros(source_mask.shape, dtype=np.float32)
-    alpha[source_valid] = 1.0
-    overlap = source_valid & destination_valid
-    if feather_width > 0:
-        ramp = np.clip(distance / feather_width, 0.0, 1.0)
-        alpha[overlap] = np.power(ramp[overlap], feather_power)
-    return alpha
+    destination_weight = cv.GaussianBlur(
+        destination_owner.astype(np.float32), (kernel, kernel), sigmaX=sigma,
+    )
+    if power != 1.0:
+        source_weight = np.power(source_weight, power)
+        destination_weight = np.power(destination_weight, power)
+    total = np.maximum(source_weight + destination_weight, 1e-6)
+    source_weight /= total
+    destination_weight /= total
+    source_extended = _extend_to_feather_band(source, source_mask, blur_radius)
+    destination_extended = _extend_to_feather_band(
+        destination, destination_mask, blur_radius,
+    )
+    blended = (
+        source_extended.astype(np.float32) * source_weight[..., None]
+        + destination_extended.astype(np.float32) * destination_weight[..., None]
+    )
+    result = np.zeros_like(source)
+    result[valid] = np.clip(blended[valid], 0, 255).astype(np.uint8)
+    return result
 
 
 def compose_pair(
@@ -191,7 +247,7 @@ def compose_pair(
     destination: np.ndarray,
     estimation: HomographyResult,
     *,
-    feather_width: float = 32.0,
+    feather_width: float = 6.0,
     feather_power: float = 1.0,
     max_canvas_pixels: int = 100_000_000,
     color_correction: bool = True,
@@ -234,20 +290,10 @@ def compose_pair(
             max_samples=color_correction_max_samples,
         )
         warped_source = apply_hhm_luts(warped_source, luts, source_mask)
-    source_alpha = _local_blend_alpha(
-        source_mask,
-        destination_mask,
-        feather_width,
-        feather_power,
+    panorama = _feather_pair(
+        warped_source, warped_destination, source_mask, destination_mask,
+        feather_width, feather_power,
     )
-    destination_alpha = 1.0 - source_alpha
-    color_sum = (
-        warped_source.astype(np.float32) * source_alpha[..., None]
-        + warped_destination.astype(np.float32) * destination_alpha[..., None]
-    )
-    panorama = np.zeros_like(warped_source)
-    valid = (source_mask > 0) | (destination_mask > 0)
-    panorama[valid] = np.clip(color_sum[valid], 0, 255).astype(np.uint8)
     return StitchResult(
         panorama, source_mask, destination_mask,
         source_transform, destination_transform, estimation, correction_stats,
@@ -261,7 +307,7 @@ def stitch_pair(
     line_matcher,
     *,
     initial_homography: np.ndarray | None = None,
-    feather_width: float = 32.0,
+    feather_width: float = 6.0,
     feather_power: float = 1.0,
     color_correction: bool = True,
     color_correction_coeff: float = 1.0,

@@ -17,6 +17,15 @@
 
 算法和坐标变换的详细说明见 [algorithm.md](algorithm.md)。
 
+## 算法流程
+
+1. 使用可选的标定初值 `H_init` 将 Local 投影到 Global，限定后续匹配区域；未提供初值时，在两张输入图像上直接估计单应性。
+2. 在有效重叠区分别进行 OmniGlue 点匹配和 LineTR 线匹配，并按置信度、几何距离与方向过滤不可靠匹配。
+3. 由点匹配建立稳健初值，再联合优化点重投影误差与线采样距离，得到 `H_final`；有初值时满足 `H_final = H_delta @ H_init`。
+4. 根据 Local/Global 有效重叠像素估计一套 HHM 映射，应用于 Local；将 Local 投影到 Global 画布，仅在投影边缘 6 px 范围内羽化融合。
+
+以下三组真实场景均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果，展示不同视角下的配准效果。
+
 ## 输入和输出
 
 三个真实样例都采用初值精修模式。每个样例目录的输入含义如下：
@@ -53,7 +62,7 @@ H_final = H_delta @ H_init
 
 `final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是带定位框的完整最终画布，右侧是黄色框对应的最终融合像素，并使用相同的 2 px 青色虚线标记 local 边界。原始无标注大图仍保存在 `panorama.jpg`，三个样例的尺寸均为 `3840 × 2160`。
 
-默认根据重叠区估计 HHM 颜色映射并校正 Local，然后只在 local 投影边缘内侧 32 px 范围羽化：边界处由 global 平滑过渡，离开边界 32 px 后 local 权重达到 100%。可通过 `--feather-width` 调整过渡宽度；设为 `0` 表示不羽化、直接覆盖。色彩映射系数和 HHM 稀疏直方图阈值可分别通过 `--color-correction-coeff`、`--color-correction-threshold` 调整。
+默认根据重叠区估计 HHM 颜色映射并校正 Local，再将 Local/Global 的归属掩膜以高斯权重归一化融合。羽化半径为 6 px，颜色在投影边界两侧的窄带内平滑过渡。可通过 `--feather-width` 调整半径；设为 `0` 表示不羽化、直接覆盖。色彩映射系数和 HHM 稀疏直方图阈值可分别通过 `--color-correction-coeff`、`--color-correction-threshold` 调整。
 
 ## 三个真实场景样例
 
@@ -180,7 +189,7 @@ image-stitch source.jpg destination.jpg \
 --ransac-threshold 4.0          点 RANSAC 阈值（匹配尺度像素）
 --line-distance-threshold 12.0  线中点到目标直线阈值
 --line-angle-threshold 15.0     线方向差阈值（度）
---feather-width 32              local 边缘羽化宽度（输出像素），0 表示直接覆盖
+--feather-width 6               local 边缘羽化宽度（输出像素），0 表示直接覆盖
 --feather-power 1.0             羽化曲线指数
 --no-color-correction           关闭默认开启的 HHM 色差矫正
 --color-correction-coeff 1.0    HHM 映射系数，0 到 1

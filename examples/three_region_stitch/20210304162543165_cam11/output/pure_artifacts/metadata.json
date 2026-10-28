@@ -59,7 +59,7 @@
   ],
   "blending": {
     "mode": "local_edge_feather",
-    "feather_width_pixels": 32.0,
+    "feather_width_pixels": 6.0,
     "feather_power": 1.0
   },
   "matching": {
@@ -138,5 +138,18 @@
     691,
     406
   ],
-  "source_coordinate_update": "Converted cached homographies from the previous 1920x1080 Local sample to the original 3840x2160 Local frame by right-multiplying the source coordinate transform diag(0.5, 0.5, 1). The geometric solution and point-line match statistics are preserved."
+  "source_coordinate_update": "Converted cached homographies from the previous 1920x1080 Local sample to the original 3840x2160 Local frame by right-multiplying the source coordinate transform diag(0.5, 0.5, 1). The geometric solution and point-line match statistics are preserved.",
+  "color_correction": {
+    "method": "HHM",
+    "applied": true,
+    "reason": "ok",
+    "coeff": 1.0,
+    "local_straightening_threshold": 0.05,
+    "paired_pixels_available": 209079,
+    "paired_pixels_sampled": 209079,
+    "paired_pixels_by_source_region": [
+      209079
+    ],
+    "mapping_shared_across_source_regions": false
+  }
 }
