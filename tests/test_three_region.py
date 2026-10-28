@@ -25,7 +25,8 @@ class ThreeRegionOwnershipTests(unittest.TestCase):
         result = compose_three_regions(
             global_frame, local_frame, identity, identity, (0, 0, 12, 12),
             local_motion, global_motion, raft_frame, raft_valid,
-            feather_radius=0,
+            feather_radius=0, raft_open_kernel_size=0,
+            raft_min_component_area=0, color_correction=False,
         )
         self.assertEqual(result.regions.homography_region[4, 4], 255)
         self.assertEqual(result.regions.homography_region[5, 5], 0)
