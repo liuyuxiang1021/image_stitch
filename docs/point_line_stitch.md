@@ -80,19 +80,19 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | local 输入 | global 输入 |
 | --- | --- |
-| ![运动场 local](../examples/point_line_stitch/20201024084037322_cam11/input/local.jpg) | ![运动场 global](../examples/point_line_stitch/20201024084037322_cam11/input/global.jpg) |
+| <img src="../examples/point_line_stitch/20201024084037322_cam11/input/local.jpg" width="480" alt="运动场 local"> | <img src="../examples/point_line_stitch/20201024084037322_cam11/input/global.jpg" width="480" alt="运动场 global"> |
 
 #### 初值定位及局部放大
 
 | 初值全画布定位 | 初值局部放大 |
 | --- | --- |
-| ![运动场 initial alignment 全画布](../examples/point_line_stitch/20201024084037322_cam11/output/initial_overview.jpg) | ![运动场 initial alignment 局部](../examples/point_line_stitch/20201024084037322_cam11/output/initial_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20201024084037322_cam11/output/initial_overview.jpg" width="480" alt="运动场 initial alignment 全画布"> | <img src="../examples/point_line_stitch/20201024084037322_cam11/output/initial_zoom.jpg" width="480" alt="运动场 initial alignment 局部"> |
 
 #### 最终融合定位及局部放大
 
 | 最终融合全画布定位 | 最终融合局部放大 |
 | --- | --- |
-| ![运动场 final alignment 全画布](../examples/point_line_stitch/20201024084037322_cam11/output/final_overview.jpg) | ![运动场 final alignment 局部](../examples/point_line_stitch/20201024084037322_cam11/output/final_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20201024084037322_cam11/output/final_overview.jpg" width="480" alt="运动场 final alignment 全画布"> | <img src="../examples/point_line_stitch/20201024084037322_cam11/output/final_zoom.jpg" width="480" alt="运动场 final alignment 局部"> |
 
 #### 点线匹配
 
@@ -104,7 +104,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| ![运动场 Global 局部背景](../examples/point_line_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg) | ![运动场近 4K 拼接](../examples/point_line_stitch/20201024084037322_cam11/output/local_roi_x6.jpg) |
+| <img src="../examples/point_line_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="../examples/point_line_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接"> |
 
 ### 2. 室内展厅：`20210313151132256_cam22`
 
@@ -112,19 +112,19 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | local 输入 | global 输入 |
 | --- | --- |
-| ![展厅 local](../examples/point_line_stitch/20210313151132256_cam22/input/local.jpg) | ![展厅 global](../examples/point_line_stitch/20210313151132256_cam22/input/global.jpg) |
+| <img src="../examples/point_line_stitch/20210313151132256_cam22/input/local.jpg" width="480" alt="展厅 local"> | <img src="../examples/point_line_stitch/20210313151132256_cam22/input/global.jpg" width="480" alt="展厅 global"> |
 
 #### 初值定位及局部放大
 
 | 初值全画布定位 | 初值局部放大 |
 | --- | --- |
-| ![展厅 initial alignment 全画布](../examples/point_line_stitch/20210313151132256_cam22/output/initial_overview.jpg) | ![展厅 initial alignment 局部](../examples/point_line_stitch/20210313151132256_cam22/output/initial_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20210313151132256_cam22/output/initial_overview.jpg" width="480" alt="展厅 initial alignment 全画布"> | <img src="../examples/point_line_stitch/20210313151132256_cam22/output/initial_zoom.jpg" width="480" alt="展厅 initial alignment 局部"> |
 
 #### 最终融合定位及局部放大
 
 | 最终融合全画布定位 | 最终融合局部放大 |
 | --- | --- |
-| ![展厅 final alignment 全画布](../examples/point_line_stitch/20210313151132256_cam22/output/final_overview.jpg) | ![展厅 final alignment 局部](../examples/point_line_stitch/20210313151132256_cam22/output/final_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20210313151132256_cam22/output/final_overview.jpg" width="480" alt="展厅 final alignment 全画布"> | <img src="../examples/point_line_stitch/20210313151132256_cam22/output/final_zoom.jpg" width="480" alt="展厅 final alignment 局部"> |
 
 #### 点线匹配
 
@@ -136,7 +136,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| ![展厅 Global 局部背景](../examples/point_line_stitch/20210313151132256_cam22/output/global_roi_lanczos_x6.jpg) | ![展厅近 4K 拼接](../examples/point_line_stitch/20210313151132256_cam22/output/local_roi_x6.jpg) |
+| <img src="../examples/point_line_stitch/20210313151132256_cam22/output/global_roi_lanczos_x6.jpg" width="480" alt="展厅 Global 局部背景"> | <img src="../examples/point_line_stitch/20210313151132256_cam22/output/local_roi_x6.jpg" width="480" alt="展厅近 4K 拼接"> |
 
 ### 3. 校园道路：`20220817171240976_cam35`
 
@@ -144,19 +144,19 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | local 输入 | global 输入 |
 | --- | --- |
-| ![道路 local](../examples/point_line_stitch/20220817171240976_cam35/input/local.jpg) | ![道路 global](../examples/point_line_stitch/20220817171240976_cam35/input/global.jpg) |
+| <img src="../examples/point_line_stitch/20220817171240976_cam35/input/local.jpg" width="480" alt="道路 local"> | <img src="../examples/point_line_stitch/20220817171240976_cam35/input/global.jpg" width="480" alt="道路 global"> |
 
 #### 初值定位及局部放大
 
 | 初值全画布定位 | 初值局部放大 |
 | --- | --- |
-| ![道路 initial alignment 全画布](../examples/point_line_stitch/20220817171240976_cam35/output/initial_overview.jpg) | ![道路 initial alignment 局部](../examples/point_line_stitch/20220817171240976_cam35/output/initial_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20220817171240976_cam35/output/initial_overview.jpg" width="480" alt="道路 initial alignment 全画布"> | <img src="../examples/point_line_stitch/20220817171240976_cam35/output/initial_zoom.jpg" width="480" alt="道路 initial alignment 局部"> |
 
 #### 最终融合定位及局部放大
 
 | 最终融合全画布定位 | 最终融合局部放大 |
 | --- | --- |
-| ![道路 final alignment 全画布](../examples/point_line_stitch/20220817171240976_cam35/output/final_overview.jpg) | ![道路 final alignment 局部](../examples/point_line_stitch/20220817171240976_cam35/output/final_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20220817171240976_cam35/output/final_overview.jpg" width="480" alt="道路 final alignment 全画布"> | <img src="../examples/point_line_stitch/20220817171240976_cam35/output/final_zoom.jpg" width="480" alt="道路 final alignment 局部"> |
 
 #### 点线匹配
 
@@ -168,7 +168,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| ![道路 Global 局部背景](../examples/point_line_stitch/20220817171240976_cam35/output/global_roi_lanczos_x6.jpg) | ![道路近 4K 拼接](../examples/point_line_stitch/20220817171240976_cam35/output/local_roi_x6.jpg) |
+| <img src="../examples/point_line_stitch/20220817171240976_cam35/output/global_roi_lanczos_x6.jpg" width="480" alt="道路 Global 局部背景"> | <img src="../examples/point_line_stitch/20220817171240976_cam35/output/local_roi_x6.jpg" width="480" alt="道路近 4K 拼接"> |
 
 ### 4. 运动场另一视角：`20201025083303988_cam22`
 
@@ -176,19 +176,19 @@ Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为
 
 | Local 输入 | Global 输入 |
 | --- | --- |
-| ![运动场 cam22 Local](../examples/point_line_stitch/20201025083303988_cam22/input/local.jpg) | ![运动场 cam22 Global](../examples/point_line_stitch/20201025083303988_cam22/input/global.jpg) |
+| <img src="../examples/point_line_stitch/20201025083303988_cam22/input/local.jpg" width="480" alt="运动场 cam22 Local"> | <img src="../examples/point_line_stitch/20201025083303988_cam22/input/global.jpg" width="480" alt="运动场 cam22 Global"> |
 
 #### 初值定位及局部放大
 
 | 初值全画布定位 | 初值局部放大 |
 | --- | --- |
-| ![运动场 cam22 初值定位 全画布](../examples/point_line_stitch/20201025083303988_cam22/output/initial_overview.jpg) | ![运动场 cam22 初值定位 局部](../examples/point_line_stitch/20201025083303988_cam22/output/initial_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20201025083303988_cam22/output/initial_overview.jpg" width="480" alt="运动场 cam22 初值定位 全画布"> | <img src="../examples/point_line_stitch/20201025083303988_cam22/output/initial_zoom.jpg" width="480" alt="运动场 cam22 初值定位 局部"> |
 
 #### 最终融合定位及局部放大
 
 | 最终融合全画布定位 | 最终融合局部放大 |
 | --- | --- |
-| ![运动场 cam22 最终融合定位 全画布](../examples/point_line_stitch/20201025083303988_cam22/output/final_overview.jpg) | ![运动场 cam22 最终融合定位 局部](../examples/point_line_stitch/20201025083303988_cam22/output/final_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20201025083303988_cam22/output/final_overview.jpg" width="480" alt="运动场 cam22 最终融合定位 全画布"> | <img src="../examples/point_line_stitch/20201025083303988_cam22/output/final_zoom.jpg" width="480" alt="运动场 cam22 最终融合定位 局部"> |
 
 #### 点线匹配
 
@@ -200,7 +200,7 @@ Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| ![运动场 cam22 Global 局部背景](../examples/point_line_stitch/20201025083303988_cam22/output/global_roi_lanczos_x6.jpg) | ![运动场 cam22 近 4K 拼接](../examples/point_line_stitch/20201025083303988_cam22/output/local_roi_x6.jpg) |
+| <img src="../examples/point_line_stitch/20201025083303988_cam22/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 cam22 Global 局部背景"> | <img src="../examples/point_line_stitch/20201025083303988_cam22/output/local_roi_x6.jpg" width="480" alt="运动场 cam22 近 4K 拼接"> |
 
 ### 5. 商街人群：`20220806141041707_cam32`
 
@@ -208,19 +208,19 @@ Frame 6000。点线匹配精修后保留 517 个点、67 条线；局部输出�
 
 | Local 输入 | Global 输入 |
 | --- | --- |
-| ![商街 cam32 Local](../examples/point_line_stitch/20220806141041707_cam32/input/local.jpg) | ![商街 cam32 Global](../examples/point_line_stitch/20220806141041707_cam32/input/global.jpg) |
+| <img src="../examples/point_line_stitch/20220806141041707_cam32/input/local.jpg" width="480" alt="商街 cam32 Local"> | <img src="../examples/point_line_stitch/20220806141041707_cam32/input/global.jpg" width="480" alt="商街 cam32 Global"> |
 
 #### 初值定位及局部放大
 
 | 初值全画布定位 | 初值局部放大 |
 | --- | --- |
-| ![商街 cam32 初值定位 全画布](../examples/point_line_stitch/20220806141041707_cam32/output/initial_overview.jpg) | ![商街 cam32 初值定位 局部](../examples/point_line_stitch/20220806141041707_cam32/output/initial_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20220806141041707_cam32/output/initial_overview.jpg" width="480" alt="商街 cam32 初值定位 全画布"> | <img src="../examples/point_line_stitch/20220806141041707_cam32/output/initial_zoom.jpg" width="480" alt="商街 cam32 初值定位 局部"> |
 
 #### 最终融合定位及局部放大
 
 | 最终融合全画布定位 | 最终融合局部放大 |
 | --- | --- |
-| ![商街 cam32 最终融合定位 全画布](../examples/point_line_stitch/20220806141041707_cam32/output/final_overview.jpg) | ![商街 cam32 最终融合定位 局部](../examples/point_line_stitch/20220806141041707_cam32/output/final_zoom.jpg) |
+| <img src="../examples/point_line_stitch/20220806141041707_cam32/output/final_overview.jpg" width="480" alt="商街 cam32 最终融合定位 全画布"> | <img src="../examples/point_line_stitch/20220806141041707_cam32/output/final_zoom.jpg" width="480" alt="商街 cam32 最终融合定位 局部"> |
 
 #### 点线匹配
 
@@ -232,7 +232,7 @@ Frame 6000。点线匹配精修后保留 517 个点、67 条线；局部输出�
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
-| ![商街 cam32 Global 局部背景](../examples/point_line_stitch/20220806141041707_cam32/output/global_roi_lanczos_x6.jpg) | ![商街 cam32 近 4K 拼接](../examples/point_line_stitch/20220806141041707_cam32/output/local_roi_x6.jpg) |
+| <img src="../examples/point_line_stitch/20220806141041707_cam32/output/global_roi_lanczos_x6.jpg" width="480" alt="商街 cam32 Global 局部背景"> | <img src="../examples/point_line_stitch/20220806141041707_cam32/output/local_roi_x6.jpg" width="480" alt="商街 cam32 近 4K 拼接"> |
 
 ## 安装
 
