@@ -1,0 +1,9 @@
+{
+  "scene": "20201025083303988",
+  "camera": "22",
+  "frame_index_zero_based": 6000,
+  "source_local_video": "20201025083303988/main/22.mp4",
+  "source_global_video": "20201025083303988/main/100.mp4",
+  "global_processing": "undistort with camera_calibration_initial/100_undistor.pkl; full 3840x2160 frame",
+  "H_init_source": "original calibration estimate from all-scene review"
+}

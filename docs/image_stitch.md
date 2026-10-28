@@ -24,11 +24,11 @@
 3. 由点匹配建立稳健初值，再联合优化点重投影误差与线采样距离，得到 `H_final`；有初值时满足 `H_final = H_delta @ H_init`。
 4. 根据 Local/Global 有效重叠像素估计一套 HHM 映射，应用于 Local；将 Local 投影到 Global 画布，仅在投影边缘 6 px 范围内羽化融合。
 
-以下三组真实场景均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果，展示不同视角下的配准效果。
+以下五组真实视角均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果。
 
 ## 输入和输出
 
-三个真实样例都采用初值精修模式。每个样例目录的输入含义如下：
+五组样例都采用初值精修模式。每个样例目录的输入含义如下：
 
 | 文件 | 含义 |
 | --- | --- |
@@ -36,7 +36,7 @@
 | `input/global.jpg` | 目标/参考图：全局相机拍摄并已去畸变的宽视角图像 |
 | `input/H_init.npz` | 原项目标定得到的粗单应性初值，文件内矩阵键为 `H` |
 
-这里提交的三份 `H_init.npz` 均由原项目的相机内外参与地面参数直接重新计算。原项目 `to_yy` 目录中的同场景 `H_*.npz` 实际保存的是已经经过点线优化的 `H_final`，因此没有将它们作为初值使用。
+五份 `H_init.npz` 均来自原项目的标定和地面参数。原项目 `to_yy` 目录中的部分同场景 `H_*.npz` 保存的是已经优化的 `H_final`，没有作为初值使用。
 
 坐标方向始终是从 local 到 global：
 
@@ -58,7 +58,7 @@ H_final = H_delta @ H_init
 | `output/point_line_matches.jpg` | 裁到投影 ROI 后的点线匹配可视化，展示尺寸不再受 global 全画布影响 |
 | `output/metadata.json` | 输入路径、初值和最终投影 ROI、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE、迭代次数及 HHM 采样统计 |
 
-这些样例中 Local 的视野位于 Global 的一小块区域。`panorama.jpg` 保留原来的 3840 × 2160 Global 画布供定位；主要展示的 `local_roi_x6.jpg` 只输出 Local 投影附近的近 4K 区域，Global 背景插值放大，Local 仍使用原始像素投影。命令行运行时还会保存同范围的 `global_roi_lanczos_x6.jpg`。
+这些样例中 Local 的视野位于 Global 的一小块区域。`panorama.jpg` 保留原来的 3840 × 2160 Global 画布供定位；主要展示的 `local_roi_x6.jpg` 只输出 Local 投影附近的近 4K 区域，Global 背景插值放大，Local 仍使用原始像素投影。命令行运行时还会保存同范围的 `global_roi_lanczos_x6.jpg`。三分区域中的纯单应性对照复用同一投影、HHM 校色和羽化函数，但使用 FSRCNN 生成的 Global 背景。
 
 可用已保存的 `H_final` 重建近 4K 图，无需重新运行匹配模型：
 
@@ -68,11 +68,11 @@ python scripts/render_image_stitch_roi.py --example examples/image_stitch/202010
 
 `initial_alignment.jpg` 左侧青色轮廓表示 local 经 `H_init` 投影后的实际边界，黄色矩形表示带 32 px 留白的可视化 ROI；右侧将这个 ROI 放大，并按照 local 55%、global 45% 叠加。右侧使用 2 px 青色虚线标记 local 的真实边界，以减少对对齐细节的遮挡。
 
-`final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是带定位框的完整最终画布，右侧是黄色框对应的最终融合像素，并使用相同的 2 px 青色虚线标记 local 边界。原始无标注大图仍保存在 `panorama.jpg`，三个样例的尺寸均为 `3840 × 2160`。
+`final_alignment.jpg` 使用同样的布局，但基于 `H_final` 和实际羽化融合结果生成：左侧是带定位框的完整最终画布，右侧是黄色框对应的最终融合像素，并使用相同的 2 px 青色虚线标记 local 边界。原始无标注大图仍保存在 `panorama.jpg`，五个样例的尺寸均为 `3840 × 2160`。
 
 默认根据重叠区估计 HHM 颜色映射并校正 Local，再将 Local/Global 的归属掩膜以高斯权重归一化融合。羽化半径为 6 px，颜色在投影边界两侧的窄带内平滑过渡。可通过 `--feather-width` 调整半径；设为 `0` 表示不羽化、直接覆盖。色彩映射系数和 HHM 稀疏直方图阈值可分别通过 `--color-correction-coeff`、`--color-correction-threshold` 调整。
 
-## 三个真实场景样例
+## 五组真实视角样例
 
 ### 1. 运动场：`20201024084037322_cam11`
 
@@ -89,6 +89,8 @@ python scripts/render_image_stitch_roi.py --example examples/image_stitch/202010
 #### 最终融合定位及局部放大
 
 ![运动场 final alignment](../examples/image_stitch/20201024084037322_cam11/output/final_alignment.jpg)
+
+#### 点线匹配
 
 ![运动场点线匹配](../examples/image_stitch/20201024084037322_cam11/output/point_line_matches.jpg)
 
@@ -116,6 +118,8 @@ python scripts/render_image_stitch_roi.py --example examples/image_stitch/202010
 
 ![展厅 final alignment](../examples/image_stitch/20210313151132256_cam22/output/final_alignment.jpg)
 
+#### 点线匹配
+
 ![展厅点线匹配](../examples/image_stitch/20210313151132256_cam22/output/point_line_matches.jpg)
 
 #### Local 区域近 4K 拼接结果
@@ -142,6 +146,8 @@ python scripts/render_image_stitch_roi.py --example examples/image_stitch/202010
 
 ![道路 final alignment](../examples/image_stitch/20220817171240976_cam35/output/final_alignment.jpg)
 
+#### 点线匹配
+
 ![道路点线匹配](../examples/image_stitch/20220817171240976_cam35/output/point_line_matches.jpg)
 
 #### Local 区域近 4K 拼接结果
@@ -151,6 +157,62 @@ python scripts/render_image_stitch_roi.py --example examples/image_stitch/202010
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
 | ![道路 Global 局部背景](../examples/image_stitch/20220817171240976_cam35/output/global_roi_lanczos_x6.jpg) | ![道路近 4K 拼接](../examples/image_stitch/20220817171240976_cam35/output/local_roi_x6.jpg) |
+
+### 4. 运动场另一视角：`20201025083303988_cam22`
+
+Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为 3828 × 2286。
+
+| Local 输入 | Global 输入 |
+| --- | --- |
+| ![运动场 cam22 Local](../examples/image_stitch/20201025083303988_cam22/input/local.jpg) | ![运动场 cam22 Global](../examples/image_stitch/20201025083303988_cam22/input/global.jpg) |
+
+#### 初值定位及局部放大
+
+![运动场 cam22 初值定位](../examples/image_stitch/20201025083303988_cam22/output/initial_alignment.jpg)
+
+#### 最终融合定位及局部放大
+
+![运动场 cam22 最终融合定位](../examples/image_stitch/20201025083303988_cam22/output/final_alignment.jpg)
+
+#### 点线匹配
+
+![运动场 cam22 点线匹配](../examples/image_stitch/20201025083303988_cam22/output/point_line_matches.jpg)
+
+#### Local 区域近 4K 拼接结果
+
+两图取自同一 Local 投影区域，尺寸均为 3828 × 2286。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| ![运动场 cam22 Global 局部背景](../examples/image_stitch/20201025083303988_cam22/output/global_roi_lanczos_x6.jpg) | ![运动场 cam22 近 4K 拼接](../examples/image_stitch/20201025083303988_cam22/output/local_roi_x6.jpg) |
+
+### 5. 商街人群：`20220806141041707_cam32`
+
+Frame 6000。点线匹配精修后保留 517 个点、67 条线；局部输出为 3852 × 2304。
+
+| Local 输入 | Global 输入 |
+| --- | --- |
+| ![商街 cam32 Local](../examples/image_stitch/20220806141041707_cam32/input/local.jpg) | ![商街 cam32 Global](../examples/image_stitch/20220806141041707_cam32/input/global.jpg) |
+
+#### 初值定位及局部放大
+
+![商街 cam32 初值定位](../examples/image_stitch/20220806141041707_cam32/output/initial_alignment.jpg)
+
+#### 最终融合定位及局部放大
+
+![商街 cam32 最终融合定位](../examples/image_stitch/20220806141041707_cam32/output/final_alignment.jpg)
+
+#### 点线匹配
+
+![商街 cam32 点线匹配](../examples/image_stitch/20220806141041707_cam32/output/point_line_matches.jpg)
+
+#### Local 区域近 4K 拼接结果
+
+两图取自同一 Local 投影区域，尺寸均为 3852 × 2304。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| ![商街 cam32 Global 局部背景](../examples/image_stitch/20220806141041707_cam32/output/global_roi_lanczos_x6.jpg) | ![商街 cam32 近 4K 拼接](../examples/image_stitch/20220806141041707_cam32/output/local_roi_x6.jpg) |
 
 ## 安装
 
@@ -188,11 +250,13 @@ image-stitch \
   --artifacts-dir "$example/output"
 ```
 
-将 `example` 改为下面任一目录即可复现另外两个场景：
+将 `example` 改为下面任一目录即可复现另外四组：
 
 ```text
 examples/image_stitch/20210313151132256_cam22
 examples/image_stitch/20220817171240976_cam35
+examples/image_stitch/20201025083303988_cam22
+examples/image_stitch/20220806141041707_cam32
 ```
 
 运行会覆盖对应目录内已提交的输出。不同 GPU、CUDA/cuDNN 或依赖版本可能造成末位数值差异。
@@ -207,7 +271,7 @@ image-stitch source.jpg destination.jpg \
   --artifacts-dir output
 ```
 
-三个仓库样例的 local/global 尺度和视角差异较大，所以使用原项目的 `H_init` 做重叠区域定位，再进行完整的点线匹配精修。
+五组仓库样例的 Local/Global 尺度和视角差异较大，所以使用原项目的 `H_init` 做重叠区域定位，再进行完整的点线匹配精修。
 
 `H_init` 支持以下格式：3×3 `.npy`；含 `H_init`、`homography` 或 `H` 键的 `.npz`；JSON 形式的 3×3 数组或含上述字段的对象。
 
@@ -276,7 +340,9 @@ print(result.estimation.homography)
 ```text
 examples/image_stitch/
 ├── 20201024084037322_cam11/
+├── 20201025083303988_cam22/
 ├── 20210313151132256_cam22/
+├── 20220806141041707_cam32/
 └── 20220817171240976_cam35/
     ├── input/
     │   ├── local.jpg
@@ -284,6 +350,8 @@ examples/image_stitch/
     │   └── H_init.npz
     └── output/
         ├── panorama.jpg
+        ├── local_roi_x6.jpg
+        ├── global_roi_lanczos_x6.jpg
         ├── initial_warp.jpg
         ├── initial_alignment.jpg
         ├── final_alignment.jpg
@@ -291,7 +359,7 @@ examples/image_stitch/
         └── metadata.json
 ```
 
-三个样例目录内部结构相同。
+五组样例的主要输入与输出文件相同；两组新样例还在根目录保存 `sample.json`，记录原视频帧号和输入来源。
 
 ## 测试
 
@@ -301,7 +369,7 @@ examples/image_stitch/
 python -m unittest discover -s tests -v
 ```
 
-单元测试使用确定性的合成点线约束，覆盖离群点过滤、点线联合优化、无有效线匹配时的回退、初值精修、画布计算和融合；仓库中的三个展示样例则全部由真实图像和完整 OmniGlue + LineTR 流程产生。
+单元测试使用确定性的合成点线约束，覆盖离群点过滤、点线联合优化、无有效线匹配时的回退、初值精修、画布计算和融合；仓库中的五组展示样例由真实图像和 OmniGlue + LineTR 流程产生。
 
 ## 第三方项目
 

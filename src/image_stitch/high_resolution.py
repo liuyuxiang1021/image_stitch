@@ -20,6 +20,53 @@ class LocalROIResult:
     color_correction: dict
 
 
+@dataclass(frozen=True)
+class HomographyRenderResult:
+    image: np.ndarray
+    color_correction: dict
+
+
+def render_homography_on_background(
+    background: np.ndarray,
+    local: np.ndarray,
+    homography: np.ndarray,
+    feather_radius: float,
+    *,
+    feather_power: float = 1.0,
+    color_luts: np.ndarray | None = None,
+    color_correction: bool = True,
+    color_correction_coeff: float = 1.0,
+    color_correction_threshold: float = 0.05,
+    color_correction_max_samples: int = 400_000,
+) -> HomographyRenderResult:
+    """Project Local onto an already prepared Global background, then apply HHM and feathering."""
+    height, width = background.shape[:2]
+    homography = np.asarray(homography, dtype=np.float64).reshape(3, 3)
+    warped = cv.warpPerspective(local, homography, (width, height))
+    valid = cv.warpPerspective(
+        np.full(local.shape[:2], 255, dtype=np.uint8),
+        homography, (width, height), flags=cv.INTER_NEAREST,
+    )
+    correction_stats = {"method": "HHM", "applied": False, "reason": "disabled"}
+    if color_correction:
+        if color_luts is None:
+            color_luts, correction_stats = fit_hhm_for_regions(
+                background, [warped], [valid],
+                coeff=color_correction_coeff,
+                local_straightening_threshold=color_correction_threshold,
+                max_samples=color_correction_max_samples,
+            )
+        else:
+            correction_stats = {"method": "HHM", "applied": True, "reason": "supplied_luts"}
+        warped = apply_hhm_luts(warped, color_luts, valid)
+    image = _feather_pair(
+        warped, background, valid,
+        np.full(valid.shape, 255, dtype=np.uint8),
+        feather_radius, feather_power,
+    )
+    return HomographyRenderResult(image, correction_stats)
+
+
 def projected_local_roi(
     local_shape: tuple[int, ...],
     homography: np.ndarray,
@@ -94,23 +141,15 @@ def compose_local_roi(
     shift = np.array([[1.0, 0.0, -x0], [0.0, 1.0, -y0], [0.0, 0.0, 1.0]])
     upsample = np.diag([float(scale), float(scale), 1.0])
     source_to_roi = upsample @ shift @ np.asarray(homography, dtype=np.float64).reshape(3, 3)
-    warped = cv.warpPerspective(local, source_to_roi, output_size)
-    valid = cv.warpPerspective(
-        np.full(local.shape[:2], 255, dtype=np.uint8),
-        source_to_roi, output_size, flags=cv.INTER_NEAREST,
+    rendered = render_homography_on_background(
+        background, local, source_to_roi, feather_width * scale,
+        feather_power=feather_power,
+        color_correction=color_correction,
+        color_correction_coeff=color_correction_coeff,
+        color_correction_threshold=color_correction_threshold,
+        color_correction_max_samples=color_correction_max_samples,
     )
-    correction_stats = {"method": "HHM", "applied": False, "reason": "disabled"}
-    if color_correction:
-        luts, correction_stats = fit_hhm_for_regions(
-            background, [warped], [valid],
-            coeff=color_correction_coeff,
-            local_straightening_threshold=color_correction_threshold,
-            max_samples=color_correction_max_samples,
-        )
-        warped = apply_hhm_luts(warped, luts, valid)
-    image = _feather_pair(
-        warped, background, valid,
-        np.full(valid.shape, 255, dtype=np.uint8),
-        feather_width * scale, feather_power,
+    return LocalROIResult(
+        rendered.image, background, (x0, y0, x1, y1),
+        source_to_roi, rendered.color_correction,
     )
-    return LocalROIResult(image, background, (x0, y0, x1, y1), source_to_roi, correction_stats)

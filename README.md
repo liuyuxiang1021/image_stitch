@@ -4,7 +4,7 @@
 
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
-| [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场、展厅、校园道路各一组图像 |
+| [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场两组、展厅、校园道路、商街各一组图像 |
 | [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 五组双视角样例，各含 1000 帧 ROI 视频 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
@@ -18,7 +18,9 @@
 2. 用 OmniGlue 匹配点、LineTR 匹配线，过滤不可靠的匹配后共同优化，得到 `H_final`。
 3. 根据重叠区域校正 Local 颜色，将原始 Local 投到放大后的局部画布，并在边缘羽化（原画布半径 6 px）。Global 局部背景使用 Lanczos 插值放大 6 倍。
 
-下面展示运动场 `20201024084037322_cam11` 样例；另外两组场景的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/image_stitch.md)。
+纯拼接和三分区域中的纯单应性对照共用投影、HHM 校色与羽化代码；三分区域的 Global 背景另由 FSRCNN 生成。
+
+下面展示运动场 `20201024084037322_cam11` 样例；其余四组的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/image_stitch.md)。
 
 ### 输入图像
 
@@ -124,7 +126,7 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 ```text
 src/image_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
 src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享 HHM 与三区合图
-examples/image_stitch/           # 三组静态图像输入与输出
+examples/image_stitch/           # 五组静态图像输入与输出
 examples/three_region_stitch/    # 五组 1000 帧入选样例及三组旧版样例
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules

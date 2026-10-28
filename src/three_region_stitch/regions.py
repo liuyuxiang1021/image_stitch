@@ -8,6 +8,7 @@ import cv2 as cv
 import numpy as np
 
 from image_stitch.color_correction import apply_hhm_luts, fit_hhm_for_regions
+from image_stitch.high_resolution import render_homography_on_background
 
 
 DEFAULT_RAFT_OPEN_KERNEL_SIZE = 3
@@ -237,34 +238,14 @@ def compose_homography_over_background(
     color_correction_max_samples: int = 400_000,
 ) -> np.ndarray:
     """Warp one source onto a full background canvas and feather its boundary."""
-    height, width = background.shape[:2]
-    homography = np.asarray(homography, dtype=np.float64).reshape(3, 3)
-    warped = cv.warpPerspective(source, homography, (width, height))
-    source_valid = cv.warpPerspective(
-        np.full(source.shape[:2], 255, dtype=np.uint8),
-        homography,
-        (width, height),
-        flags=cv.INTER_NEAREST,
-    )
-    if color_correction:
-        if color_luts is None:
-            color_luts, _ = fit_hhm_for_regions(
-                background, [warped], [source_valid],
-                coeff=color_correction_coeff,
-                local_straightening_threshold=color_correction_threshold,
-                max_samples=color_correction_max_samples,
-            )
-        warped = apply_hhm_luts(warped, color_luts, source_valid)
-    background_region = cv.bitwise_not(source_valid)
-    return feather_sources(
-        (background, warped),
-        (background_region, source_valid),
-        feather_radius,
-        source_valid_masks=(
-            np.full(background.shape[:2], 255, np.uint8),
-            source_valid,
-        ),
-    )
+    return render_homography_on_background(
+        background, source, homography, feather_radius,
+        color_luts=color_luts,
+        color_correction=color_correction,
+        color_correction_coeff=color_correction_coeff,
+        color_correction_threshold=color_correction_threshold,
+        color_correction_max_samples=color_correction_max_samples,
+    ).image
 
 
 def compose_three_regions(
