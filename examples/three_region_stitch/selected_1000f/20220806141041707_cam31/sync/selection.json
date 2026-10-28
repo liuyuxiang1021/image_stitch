@@ -1,0 +1,373 @@
+{
+  "method": "fixed_global_target_motion_masked_ssim_on_projected_local",
+  "anchor_global_index": 6000,
+  "search_radius_requested": 30,
+  "search_start_local_index": 5970,
+  "search_end_local_index": 6030,
+  "global_roi_xyxy_in_sample": [
+    44,
+    16,
+    700,
+    392
+  ],
+  "score_mask_pixels": 77589,
+  "projection_homography_local_to_global_roi": [
+    [
+      0.16741243497541536,
+      -0.0020308776544686593,
+      20.760989153217757
+    ],
+    [
+      0.0016758183828152861,
+      0.15999711026504082,
+      16.2970468936188
+    ],
+    [
+      9.375119213192343e-06,
+      1.8479083605628485e-06,
+      1.0036734348840324
+    ]
+  ],
+  "projection_h_source": "previously_estimated_H_final_fixed_for_search",
+  "global_roi": "global_roi.jpg",
+  "score_mask": "score_mask.png",
+  "local_projection_video": "local_projection.mp4",
+  "current_local_index": 6000,
+  "best": {
+    "local_frame_index": 5997,
+    "offset_from_global_index": -3,
+    "masked_ssim": 0.4252174
+  },
+  "selected": {
+    "local_frame_index": 5997,
+    "offset_from_global_index": -3,
+    "masked_ssim": 0.4252174
+  },
+  "decision_detail": {
+    "best_raw": {
+      "local_frame_index": 5997,
+      "offset_from_global_index": -3,
+      "masked_ssim": 0.4252174
+    },
+    "selected": {
+      "local_frame_index": 5997,
+      "offset_from_global_index": -3,
+      "masked_ssim": 0.4252174
+    },
+    "current": {
+      "local_frame_index": 6000,
+      "offset_from_global_index": 0,
+      "masked_ssim": 0.3061237
+    },
+    "score_gain_over_current": 0.1190937,
+    "minimum_required_gain": 0.01,
+    "decision": "clear_interior_peak"
+  },
+  "candidates": [
+    {
+      "local_frame_index": 5970,
+      "offset_from_global_index": -30,
+      "masked_ssim": 0.1964245
+    },
+    {
+      "local_frame_index": 5971,
+      "offset_from_global_index": -29,
+      "masked_ssim": 0.1967
+    },
+    {
+      "local_frame_index": 5972,
+      "offset_from_global_index": -28,
+      "masked_ssim": 0.1966065
+    },
+    {
+      "local_frame_index": 5973,
+      "offset_from_global_index": -27,
+      "masked_ssim": 0.1979883
+    },
+    {
+      "local_frame_index": 5974,
+      "offset_from_global_index": -26,
+      "masked_ssim": 0.1989864
+    },
+    {
+      "local_frame_index": 5975,
+      "offset_from_global_index": -25,
+      "masked_ssim": 0.2025944
+    },
+    {
+      "local_frame_index": 5976,
+      "offset_from_global_index": -24,
+      "masked_ssim": 0.2042973
+    },
+    {
+      "local_frame_index": 5977,
+      "offset_from_global_index": -23,
+      "masked_ssim": 0.206022
+    },
+    {
+      "local_frame_index": 5978,
+      "offset_from_global_index": -22,
+      "masked_ssim": 0.2031846
+    },
+    {
+      "local_frame_index": 5979,
+      "offset_from_global_index": -21,
+      "masked_ssim": 0.2090184
+    },
+    {
+      "local_frame_index": 5980,
+      "offset_from_global_index": -20,
+      "masked_ssim": 0.2116066
+    },
+    {
+      "local_frame_index": 5981,
+      "offset_from_global_index": -19,
+      "masked_ssim": 0.2167013
+    },
+    {
+      "local_frame_index": 5982,
+      "offset_from_global_index": -18,
+      "masked_ssim": 0.2151599
+    },
+    {
+      "local_frame_index": 5983,
+      "offset_from_global_index": -17,
+      "masked_ssim": 0.2231293
+    },
+    {
+      "local_frame_index": 5984,
+      "offset_from_global_index": -16,
+      "masked_ssim": 0.2247785
+    },
+    {
+      "local_frame_index": 5985,
+      "offset_from_global_index": -15,
+      "masked_ssim": 0.2308564
+    },
+    {
+      "local_frame_index": 5986,
+      "offset_from_global_index": -14,
+      "masked_ssim": 0.2361778
+    },
+    {
+      "local_frame_index": 5987,
+      "offset_from_global_index": -13,
+      "masked_ssim": 0.2444731
+    },
+    {
+      "local_frame_index": 5988,
+      "offset_from_global_index": -12,
+      "masked_ssim": 0.2493557
+    },
+    {
+      "local_frame_index": 5989,
+      "offset_from_global_index": -11,
+      "masked_ssim": 0.256539
+    },
+    {
+      "local_frame_index": 5990,
+      "offset_from_global_index": -10,
+      "masked_ssim": 0.2607788
+    },
+    {
+      "local_frame_index": 5991,
+      "offset_from_global_index": -9,
+      "masked_ssim": 0.2643177
+    },
+    {
+      "local_frame_index": 5992,
+      "offset_from_global_index": -8,
+      "masked_ssim": 0.2708825
+    },
+    {
+      "local_frame_index": 5993,
+      "offset_from_global_index": -7,
+      "masked_ssim": 0.2766795
+    },
+    {
+      "local_frame_index": 5994,
+      "offset_from_global_index": -6,
+      "masked_ssim": 0.2842084
+    },
+    {
+      "local_frame_index": 5995,
+      "offset_from_global_index": -5,
+      "masked_ssim": 0.3026556
+    },
+    {
+      "local_frame_index": 5996,
+      "offset_from_global_index": -4,
+      "masked_ssim": 0.3377705
+    },
+    {
+      "local_frame_index": 5997,
+      "offset_from_global_index": -3,
+      "masked_ssim": 0.4252174
+    },
+    {
+      "local_frame_index": 5998,
+      "offset_from_global_index": -2,
+      "masked_ssim": 0.3849621
+    },
+    {
+      "local_frame_index": 5999,
+      "offset_from_global_index": -1,
+      "masked_ssim": 0.3352512
+    },
+    {
+      "local_frame_index": 6000,
+      "offset_from_global_index": 0,
+      "masked_ssim": 0.3061237
+    },
+    {
+      "local_frame_index": 6001,
+      "offset_from_global_index": 1,
+      "masked_ssim": 0.2931774
+    },
+    {
+      "local_frame_index": 6002,
+      "offset_from_global_index": 2,
+      "masked_ssim": 0.2798256
+    },
+    {
+      "local_frame_index": 6003,
+      "offset_from_global_index": 3,
+      "masked_ssim": 0.2773038
+    },
+    {
+      "local_frame_index": 6004,
+      "offset_from_global_index": 4,
+      "masked_ssim": 0.2692363
+    },
+    {
+      "local_frame_index": 6005,
+      "offset_from_global_index": 5,
+      "masked_ssim": 0.2585176
+    },
+    {
+      "local_frame_index": 6006,
+      "offset_from_global_index": 6,
+      "masked_ssim": 0.2472842
+    },
+    {
+      "local_frame_index": 6007,
+      "offset_from_global_index": 7,
+      "masked_ssim": 0.2405674
+    },
+    {
+      "local_frame_index": 6008,
+      "offset_from_global_index": 8,
+      "masked_ssim": 0.2364477
+    },
+    {
+      "local_frame_index": 6009,
+      "offset_from_global_index": 9,
+      "masked_ssim": 0.2334018
+    },
+    {
+      "local_frame_index": 6010,
+      "offset_from_global_index": 10,
+      "masked_ssim": 0.2292726
+    },
+    {
+      "local_frame_index": 6011,
+      "offset_from_global_index": 11,
+      "masked_ssim": 0.2271376
+    },
+    {
+      "local_frame_index": 6012,
+      "offset_from_global_index": 12,
+      "masked_ssim": 0.2239598
+    },
+    {
+      "local_frame_index": 6013,
+      "offset_from_global_index": 13,
+      "masked_ssim": 0.2235316
+    },
+    {
+      "local_frame_index": 6014,
+      "offset_from_global_index": 14,
+      "masked_ssim": 0.2217622
+    },
+    {
+      "local_frame_index": 6015,
+      "offset_from_global_index": 15,
+      "masked_ssim": 0.22274
+    },
+    {
+      "local_frame_index": 6016,
+      "offset_from_global_index": 16,
+      "masked_ssim": 0.2223037
+    },
+    {
+      "local_frame_index": 6017,
+      "offset_from_global_index": 17,
+      "masked_ssim": 0.2241618
+    },
+    {
+      "local_frame_index": 6018,
+      "offset_from_global_index": 18,
+      "masked_ssim": 0.2227409
+    },
+    {
+      "local_frame_index": 6019,
+      "offset_from_global_index": 19,
+      "masked_ssim": 0.2259291
+    },
+    {
+      "local_frame_index": 6020,
+      "offset_from_global_index": 20,
+      "masked_ssim": 0.2251758
+    },
+    {
+      "local_frame_index": 6021,
+      "offset_from_global_index": 21,
+      "masked_ssim": 0.2235966
+    },
+    {
+      "local_frame_index": 6022,
+      "offset_from_global_index": 22,
+      "masked_ssim": 0.2215464
+    },
+    {
+      "local_frame_index": 6023,
+      "offset_from_global_index": 23,
+      "masked_ssim": 0.2257711
+    },
+    {
+      "local_frame_index": 6024,
+      "offset_from_global_index": 24,
+      "masked_ssim": 0.224021
+    },
+    {
+      "local_frame_index": 6025,
+      "offset_from_global_index": 25,
+      "masked_ssim": 0.2246874
+    },
+    {
+      "local_frame_index": 6026,
+      "offset_from_global_index": 26,
+      "masked_ssim": 0.2243266
+    },
+    {
+      "local_frame_index": 6027,
+      "offset_from_global_index": 27,
+      "masked_ssim": 0.2256778
+    },
+    {
+      "local_frame_index": 6028,
+      "offset_from_global_index": 28,
+      "masked_ssim": 0.2247817
+    },
+    {
+      "local_frame_index": 6029,
+      "offset_from_global_index": 29,
+      "masked_ssim": 0.2272862
+    },
+    {
+      "local_frame_index": 6030,
+      "offset_from_global_index": 30,
+      "masked_ssim": 0.2224548
+    }
+  ]
+}

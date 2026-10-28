@@ -6,6 +6,15 @@
     5001,
     6000
   ],
+  "global_video_frame_range_inclusive": [
+    5001,
+    6000
+  ],
+  "local_video_frame_range_inclusive": [
+    4998,
+    5997
+  ],
+  "local_frame_offset_from_global": -3,
   "frame_count": 1000,
   "video_fps": 25,
   "local_scale_from_original": 1.0,
@@ -49,6 +58,7 @@
     "benchmark": "output/benchmark/"
   },
   "note": "ROI videos are actual camera frames cropped into H_init coordinates; they are intended for independent motion-mask computation. Derived masks, homographies, and RAFT alignment data are stored in cache/.",
+  "sync_selection": "sync/selection.json",
   "selected_review_source": "selected_scene_camera_1000f_20261027/20220806141041707/cam31",
-  "selection_note": "Same frame indices as the review gallery; MP4 timestamp audit does not correct synchronization."
+  "selection_note": "Global is fixed; Local index selected from projected motion-overlap SSIM. See sync/selection.json for scores and confidence decision."
 }

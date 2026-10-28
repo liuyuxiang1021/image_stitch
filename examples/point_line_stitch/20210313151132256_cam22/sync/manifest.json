@@ -1,0 +1,36 @@
+{
+  "method": "fixed_global_target_motion_masked_ssim_on_projected_local",
+  "anchor_global_index": 26,
+  "search_radius_requested": 30,
+  "search_start_local_index": 0,
+  "search_end_local_index": 56,
+  "global_roi_xyxy_in_sample": [
+    1030,
+    946,
+    1658,
+    1314
+  ],
+  "score_mask_pixels": 85325,
+  "projection_homography_local_to_global_roi": [
+    [
+      0.1616451867210684,
+      0.001256491404218431,
+      16.874374299468524
+    ],
+    [
+      -0.0005708036812165643,
+      0.15833073015264398,
+      19.284616772966466
+    ],
+    [
+      4.430990116877755e-06,
+      -7.06903999133063e-07,
+      1.0340490312686161
+    ]
+  ],
+  "projection_h_source": "previously_estimated_H_final_fixed_for_search",
+  "global_roi": "global_roi.jpg",
+  "score_mask": "score_mask.png",
+  "local_projection_video": "local_projection.mp4",
+  "current_local_index": 26
+}

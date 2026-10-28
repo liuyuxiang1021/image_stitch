@@ -1,0 +1,10 @@
+{
+  "scene": "20220817171240976",
+  "camera": "35",
+  "frame_index_zero_based": 50,
+  "global_frame_index_zero_based": 50,
+  "local_frame_index_zero_based": 50,
+  "source_local_video": "20220817171240976/main/35.mp4",
+  "source_global_video": "20220817171240976/main/100.mp4",
+  "sync_selection": "sync/selection.json"
+}

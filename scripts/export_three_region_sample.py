@@ -56,6 +56,8 @@ def main() -> None:
     parser.add_argument("--calibration", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--start-frame", type=int, default=5801)
+    parser.add_argument("--local-frame-offset", type=int, default=0,
+                        help="Local frame index minus fixed Global frame index")
     parser.add_argument("--crop", type=int, nargs=4, default=(252, 432, 1322, 1218),
                         metavar=("X0", "Y0", "X1", "Y1"))
     parser.add_argument(
@@ -94,7 +96,7 @@ def main() -> None:
         camera_matrix, distortion, None, new_matrix, raw_size, cv.CV_32FC1,
     )
 
-    local_video = _open_at(metadata["local_video_path"], args.start_frame)
+    local_video = _open_at(metadata["local_video_path"], args.start_frame + args.local_frame_offset)
     global_video = _open_at(metadata["global_video_path"], args.start_frame)
     input_dir = args.output / "input"
     cache_dir = args.output / "cache"
@@ -122,16 +124,17 @@ def main() -> None:
     processed = 0
     try:
         for frame_index in range(args.start_frame, final_frame + 1):
+            local_frame_index = frame_index + args.local_frame_offset
             local_ok, local_raw = local_video.read()
             global_ok, global_raw = global_video.read()
             if not local_ok:
-                local_video.set(cv.CAP_PROP_POS_FRAMES, frame_index)
+                local_video.set(cv.CAP_PROP_POS_FRAMES, local_frame_index)
                 local_ok, local_raw = local_video.read()
             if not global_ok:
                 global_video.set(cv.CAP_PROP_POS_FRAMES, frame_index)
                 global_ok, global_raw = global_video.read()
             if not local_ok or not global_ok:
-                raise RuntimeError(f"Could not decode both videos at frame {frame_index}")
+                raise RuntimeError(f"Could not decode Global {frame_index} and Local {local_frame_index}")
             if local_raw.shape[:2] != (2160, 3840) or global_raw.shape[:2] != (2160, 3840):
                 raise ValueError("This export expects 3840x2160 camera recordings")
             local_roi = cv.warpPerspective(
@@ -174,6 +177,12 @@ def main() -> None:
         "camera": metadata["camera_name"],
         "source_project": "image_stitching",
         "source_video_frame_range_inclusive": [args.start_frame, final_frame],
+        "global_video_frame_range_inclusive": [args.start_frame, final_frame],
+        "local_video_frame_range_inclusive": [
+            args.start_frame + args.local_frame_offset,
+            final_frame + args.local_frame_offset,
+        ],
+        "local_frame_offset_from_global": args.local_frame_offset,
         "frame_count": processed,
         "video_fps": 25,
         "local_scale_from_original": args.local_scale,

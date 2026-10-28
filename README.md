@@ -8,6 +8,8 @@
 | [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 五组双视角样例，各含 1000 帧 ROI 视频 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
+双视角样例以 Global 帧为基准搜索对应的 Local 帧；逐帧评分和选择结果见[帧配对说明](docs/frame_synchronization.md)。
+
 ## 1. 纯点线单应性拼接
 
 ### 算法流程
@@ -30,7 +32,7 @@
 
 ### 最终拼接结果
 
-两图为 Local 投影附近的同一范围（4080 × 2388）。左图是插值放大的 Global 背景，右图是保留原始 Local 细节的拼接结果。
+两图为 Local 投影附近的同一范围（4074 × 2388）。左图是插值放大的 Global 背景，右图是保留原始 Local 细节的拼接结果。
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
@@ -46,7 +48,7 @@
 
 **输入与输出：**
 
-输入包括同帧序号的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的视频片段。
+输入包括配对后的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的视频片段。
 
 **方法：**
 
@@ -70,7 +72,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 ### 输入图像
 
-两图均取自 Frame 6000；Local 为 3840 × 2160 原始图，Global 为去畸变后的 716 × 408 裁剪图。
+Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原始图，Global 为去畸变后的 716 × 408 裁剪图。
 
 | Local 输入 | Global 输入 |
 | --- | --- |
@@ -86,7 +88,7 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
 
 ### Local 区域近 4K 拼接对照
 
-两图取自相同的 Local 投影区域，尺寸均为 4068 × 2358。
+两图取自相同的 Local 投影区域，尺寸均为 4080 × 2364。
 
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
@@ -118,8 +120,8 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 
 | 指标 | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
 | :---: | :---: | :---: |
-| PSNR（dB） | 20.214 | **21.929** |
-| SSIM | 0.6723 | **0.7042** |
+| PSNR（dB） | 20.622 | **23.036** |
+| SSIM | 0.6830 | **0.7167** |
 
 ## 仓库结构
 

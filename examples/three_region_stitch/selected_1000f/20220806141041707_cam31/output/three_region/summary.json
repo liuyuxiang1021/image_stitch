@@ -13,10 +13,16 @@
     672,
     396
   ],
-  "motion_mode": "cached",
+  "motion_mode": "recompute",
   "geometry": {
-    "mode": "cached",
-    "source": "cached_point_line_motion_homography"
+    "mode": "recompute",
+    "points_before_mask": 288,
+    "points_after_mask": 271,
+    "lines_before_mask": 65,
+    "lines_after_mask": 47,
+    "point_rmse": 1.4811232089996338,
+    "line_rmse": 1.248738169670105,
+    "fallback_reason": null
   },
   "flow_mode": "raft",
   "one_sided_to_raft": true,
@@ -33,11 +39,11 @@
       "reason": "ok",
       "coeff": 1.0,
       "local_straightening_threshold": 0.05,
-      "paired_pixels_available": 162079,
-      "paired_pixels_sampled": 162079,
+      "paired_pixels_available": 155589,
+      "paired_pixels_sampled": 155589,
       "paired_pixels_by_source_region": [
-        32041,
-        130038
+        24638,
+        130951
       ],
       "mapping_shared_across_source_regions": true
     },
@@ -47,11 +53,11 @@
       "reason": "ok",
       "coeff": 1.0,
       "local_straightening_threshold": 0.05,
-      "paired_pixels_available": 5834844,
+      "paired_pixels_available": 5601204,
       "paired_pixels_sampled": 400000,
       "paired_pixels_by_source_region": [
-        1153476,
-        4681368
+        886968,
+        4714236
       ],
       "mapping_shared_across_source_regions": true
     }
@@ -61,11 +67,11 @@
     "open_kernel_size": 3,
     "min_component_area_native_px": 256,
     "removed_pixels_owner": "Global",
-    "raft_pixels_before_cleanup": 32493,
-    "raft_pixels_after_cleanup": 32041,
-    "raft_pixels_removed": 452,
-    "connected_components_before_cleanup": 73,
-    "connected_components_after_cleanup": 6
+    "raft_pixels_before_cleanup": 25011,
+    "raft_pixels_after_cleanup": 24638,
+    "raft_pixels_removed": 373,
+    "connected_components_before_cleanup": 53,
+    "connected_components_after_cleanup": 5
   },
   "super_resolution": {
     "mode": "global-fsrcnn-x6",
@@ -82,10 +88,10 @@
       "final_result": "output/three_region/final_result_local_roi_fsrcnn_x6.jpg",
       "region_overlay": "output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg",
       "native_xyxy": [
-        36,
+        28,
         8,
-        708,
-        400
+        705,
+        406
       ]
     },
     "output_shape": [
@@ -98,10 +104,10 @@
     "final_result": "output/three_region/final_result_local_roi_fsrcnn_x6.jpg",
     "region_overlay": "output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg",
     "native_xyxy": [
-      36,
+      28,
       8,
-      708,
-      400
+      705,
+      406
     ]
   },
   "H_init": [
@@ -123,25 +129,25 @@
   ],
   "H_final": [
     [
-      0.16782494022079583,
-      -0.001949569686603894,
-      64.92262028811518
+      0.16935652329847495,
+      -0.005608561836726949,
+      64.42794977626282
     ],
     [
-      0.0018258202902263637,
-      0.16002667679880983,
-      32.35582185176332
+      0.0017064933289475527,
+      0.15917542963876355,
+      32.7590093230649
     ],
     [
-      9.375119213192343e-06,
-      1.8479083605628485e-06,
-      1.0036734348840324
+      1.2304878452259272e-05,
+      -6.799220540210131e-06,
+      1.0038663698112227
     ]
   ],
   "region_pixels": {
-    "global": 128926,
-    "raft": 32041,
-    "motion": 130038
+    "global": 135416,
+    "raft": 24638,
+    "motion": 130951
   },
   "comparison_images": {
     "pure_stitch": "output/three_region/pure_stitch_global_fsrcnn_x6.jpg",

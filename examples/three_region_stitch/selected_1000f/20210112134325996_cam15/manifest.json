@@ -50,5 +50,15 @@
   },
   "note": "ROI videos are actual camera frames cropped into H_init coordinates; they are intended for independent motion-mask computation. Derived masks, homographies, and RAFT alignment data are stored in cache/.",
   "selected_review_source": "selected_scene_camera_1000f_20261027/20210112134325996/cam15",
-  "selection_note": "Same frame indices as the review gallery; MP4 timestamp audit does not correct synchronization."
+  "selection_note": "Global is fixed; Local index selected from projected motion-overlap SSIM. See sync/selection.json for scores and confidence decision.",
+  "global_video_frame_range_inclusive": [
+    5001,
+    6000
+  ],
+  "local_video_frame_range_inclusive": [
+    5001,
+    6000
+  ],
+  "local_frame_offset_from_global": 0,
+  "sync_selection": "sync/selection.json"
 }

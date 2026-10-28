@@ -20,17 +20,17 @@
     {
       "sample": "20220806141041707_cam11",
       "roi_size": [
-        4068,
-        2358
+        4080,
+        2364
       ],
       "frame_count": 1000,
       "pure": {
-        "psnr_db": 16.541,
-        "ssim": 0.5486
+        "psnr_db": 17.807,
+        "ssim": 0.5772
       },
       "three_region": {
-        "psnr_db": 18.028,
-        "ssim": 0.5981
+        "psnr_db": 19.882,
+        "ssim": 0.6252
       }
     },
     {
@@ -52,17 +52,17 @@
     {
       "sample": "20220806141041707_cam31",
       "roi_size": [
-        4032,
-        2352
+        4062,
+        2388
       ],
       "frame_count": 1000,
       "pure": {
-        "psnr_db": 15.162,
-        "ssim": 0.6198
+        "psnr_db": 15.932,
+        "ssim": 0.6446
       },
       "three_region": {
-        "psnr_db": 20.389,
-        "ssim": 0.6777
+        "psnr_db": 24.07,
+        "ssim": 0.7133
       }
     },
     {
@@ -84,12 +84,12 @@
   ],
   "mean": {
     "pure": {
-      "psnr_db": 20.214,
-      "ssim": 0.6723
+      "psnr_db": 20.622,
+      "ssim": 0.683
     },
     "three_region": {
-      "psnr_db": 21.929,
-      "ssim": 0.7042
+      "psnr_db": 23.036,
+      "ssim": 0.7167
     }
   }
 }

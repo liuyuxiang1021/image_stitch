@@ -24,7 +24,7 @@
 3. 由点匹配建立稳健初值，再联合优化点重投影误差与线采样距离，得到 `H_final`；有初值时满足 `H_final = H_delta @ H_init`。
 4. 根据 Local/Global 有效重叠像素估计一套 HHM 映射，应用于 Local；将 Local 投影到 Global 画布，仅在投影边缘 6 px 范围内羽化融合。
 
-以下五组真实视角均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果。点线图每组最多展示 40 个点、12 条线，以便辨认；单应性估计仍使用全部过滤后的匹配。
+以下五组真实视角均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果。双视角帧号与搜索结果见[帧配对说明](frame_synchronization.md)。点线图每组最多展示 40 个点、12 条线，以便辨认；单应性估计仍使用全部过滤后的匹配。
 
 ## 输入和输出
 
@@ -76,7 +76,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 ### 1. 运动场：`20201024084037322_cam11`
 
-不同相机视角下的室外运动场。最终保留 329/335 个点匹配和 68/74 个线匹配；点 RMSE 为 1.577 px，线 RMSE 为 1.831 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正约为 54 px。
+不同相机视角下的室外运动场。Global 取 Frame 50，Local 配对到 Frame 25；最终保留 333/341 个点匹配和 65/68 个线匹配。相对于标定初值 `H_init`，`H_final` 在 Local 全图网格上的平均修正约为 54 px。
 
 | local 输入 | global 输入 |
 | --- | --- |
@@ -100,7 +100,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 #### Local 区域近 4K 拼接结果
 
-两图为同一 Local 投影区域，尺寸均为 4080 × 2388。
+两图为同一 Local 投影区域，尺寸均为 4074 × 2388。
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
@@ -108,7 +108,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 ### 2. 室内展厅：`20210313151132256_cam22`
 
-不同相机视角下的室内展厅。最终保留 631/632 个点匹配和 119/121 个线匹配；点 RMSE 为 1.292 px，线 RMSE 为 1.118 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正约为 21 px。
+不同相机视角下的室内展厅，Global/Local 均为 Frame 26。最终保留 631/632 个点匹配和 119/121 个线匹配；点 RMSE 为 1.292 px，线 RMSE 为 1.118 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正约为 21 px。
 
 | local 输入 | global 输入 |
 | --- | --- |
@@ -140,7 +140,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 ### 3. 校园道路：`20220817171240976_cam35`
 
-不同相机视角下的室外校园道路。最终保留 388/434 个点匹配和 79/79 个线匹配；点 RMSE 为 1.663 px，线 RMSE 为 1.400 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正约为 72 px。
+不同相机视角下的室外校园道路，Global/Local 均为 Frame 50。最终保留 388/434 个点匹配和 79/79 个线匹配；点 RMSE 为 1.663 px，线 RMSE 为 1.400 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正约为 72 px。
 
 | local 输入 | global 输入 |
 | --- | --- |
@@ -172,7 +172,7 @@ python scripts/render_point_line_stitch_roi.py --example examples/point_line_sti
 
 ### 4. 运动场另一视角：`20201025083303988_cam22`
 
-Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为 3828 × 2286。
+Global 取 Frame 6000，Local 配对到 Frame 5999。点线匹配精修后保留 112 个点、91 条线；局部输出为 3822 × 2274。
 
 | Local 输入 | Global 输入 |
 | --- | --- |
@@ -196,7 +196,7 @@ Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为
 
 #### Local 区域近 4K 拼接结果
 
-两图取自同一 Local 投影区域，尺寸均为 3828 × 2286。
+两图取自同一 Local 投影区域，尺寸均为 3822 × 2274。
 
 | Global 局部背景 | 纯点线单应性拼接 |
 | --- | --- |
@@ -204,7 +204,7 @@ Frame 6000。点线匹配精修后保留 98 个点、92 条线；局部输出为
 
 ### 5. 商街人群：`20220806141041707_cam32`
 
-Frame 6000。点线匹配精修后保留 517 个点、67 条线；局部输出为 3852 × 2304。
+Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条线；局部输出为 3852 × 2304。
 
 | Local 输入 | Global 输入 |
 | --- | --- |
@@ -379,7 +379,7 @@ examples/point_line_stitch/
         └── metadata.json
 ```
 
-五组样例的主要输入与输出文件相同；两组新样例还在根目录保存 `sample.json`，记录原视频帧号和输入来源。
+五组样例的主要输入与输出文件相同；各组根目录的 `sample.json` 记录 Global 和 Local 帧号及输入来源，`sync/selection.json` 保存搜索评分。
 
 ## 测试
 
