@@ -48,13 +48,31 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
 5. **校正颜色并合成高分辨率结果**：将 Global 画布整体输出为 x6（Lanczos 插值 1.5 倍后执行 FSRCNN x4），并从红、蓝区域分别抽取与 Global 对齐的像素对，共同估计一套 HHM 映射；同一映射应用于单应性区和 RAFT 区，避免两区颜色不一致。纯点线单应性结果也根据其 Local/Global 重叠像素单独估计 HHM 映射。之后将原始 Local 内容合入 x6 画布，RAFT 光流位移和区域掩膜同步映射到高分辨率画布；仅在三区边界附近羽化，默认半径为原画布 6 px，即 x6 输出中的 36 px。
 
-样例包含商街人群、城市道路和运动场人群三个同步双视角场景。Local/Global 输入、200 帧 ROI 视频、运动掩膜与 RAFT 缓存均按 `input/`、`cache/`、`output/` 分开放置。下面展示各场景 x6 Global 背景上的区域归属图及最终融合图；相同 Local ROI 的纯点线与三分区域对照见[三分区域样例说明](docs/three_region_stitch.md)。
+下面展示商街 `20220806141041707_cam11` 样例。Local/Global 输入、200 帧 ROI 视频、运动掩膜与 RAFT 缓存分别放在 `input/` 和 `cache/`；另外两组可运行样例见[三分区域样例说明](docs/three_region_stitch.md)。
 
-| 场景 | 三区归属图 | x6 最终融合 |
-| --- | --- | --- |
-| 商街人群 | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="商街三区归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="商街 x6 融合结果"> |
-| 城市道路 | <img src="examples/three_region_stitch/20210304162543165_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="道路三区归属图"> | <img src="examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="道路 x6 融合结果"> |
-| 运动场人群 | <img src="examples/three_region_stitch/20220601174105159_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="320" alt="运动场三区归属图"> | <img src="examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="320" alt="运动场 x6 融合结果"> |
+### 输入图像
+
+| Local 输入 | Global 输入 |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local 输入"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global 输入"> |
+
+两图均取自 Frame 6000；Local 为 3840 × 2160 原始图，Global 为去畸变后的 1070 × 786 裁剪图。
+
+### 区域归属与最终融合
+
+| 三区归属图 | x6 最终融合 |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="480" alt="商街三区归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="480" alt="商街 x6 最终融合"> |
+
+两图展示同一张 x6 Global 画布（6420 × 4716）：左图用颜色标出三区归属，右图是融合结果。
+
+### Local 区域近 4K 拼接对照
+
+| 纯点线单应性拼接 | 三分区域融合 |
+| --- | --- |
+| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="480" alt="商街纯点线局部拼接"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="480" alt="商街三分区域局部融合"> |
+
+两图取自相同的 Local 投影区域，尺寸均为 4080 × 2352。
 
 ## 快速运行
 
@@ -78,14 +96,12 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 同场景小规模评测
 
-对五组入选的场景/相机样例，使用对应帧和 `H_init` 分别运行纯 OmniGlue + LineTR、OpenCV SIFT + RANSAC，以及三分区域融合。样例为 `20210112134325996/cam15`、`20220806141041707/cam11`、`20220806141041707/cam21`、`20220806141041707/cam31` 和 `20250704164617116/cam15`。全 ROI 评测将三种 x6 结果与同一 x6 Global 背景比较，范围为 Local 投影区域外扩 24 px 原画布留白后的完整区域；三种结果统一使用原画布半径 6 px 的边缘羽化。表中数值是五组样例逐组计算后的等权算术平均。
+对五组入选的场景/相机样例，使用对应帧和 `H_init` 比较纯 OmniGlue + LineTR 与三分区域融合。样例为 `20210112134325996/cam15`、`20220806141041707/cam11`、`20220806141041707/cam21`、`20220806141041707/cam31` 和 `20250704164617116/cam15`。评测区域为 Local 投影范围外扩 24 px 原画布留白后的完整区域，表中数值是五组样例的算术平均。
 
-| 指标 | SIFT + RANSAC | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
-| --- | ---: | ---: | ---: |
-| PSNR（dB） | 20.247 | 20.207 | **21.911** |
-| SSIM | 0.6822 | 0.6734 | **0.7053** |
-
-这些数值表示结果与 x6 Global 背景的相似程度，不是有真值的拼接质量分数。三分区域结果中由 Global 保留的像素与参照相同，因此会影响全 ROI 得分。
+| 指标 | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
+| --- | ---: | ---: |
+| PSNR（dB） | 20.171 | **21.910** |
+| SSIM | 0.6720 | **0.7028** |
 
 ## 仓库结构
 
