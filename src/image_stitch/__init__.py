@@ -8,6 +8,7 @@ from .core import (
     stitch_pair,
 )
 from .matchers import LineTRLineMatcher, OmniGluePointMatcher
+from .high_resolution import LocalROIResult, compose_local_roi, projected_local_roi
 from .optimization import estimate_point_line_homography, optimize_homography
 from .types import (
     FeatureMatches,
@@ -25,6 +26,9 @@ __all__ = [
     "StitchResult",
     "OmniGluePointMatcher",
     "LineTRLineMatcher",
+    "LocalROIResult",
+    "compose_local_roi",
+    "projected_local_roi",
     "compose_pair",
     "estimate_homography",
     "load_homography",

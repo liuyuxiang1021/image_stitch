@@ -10,6 +10,7 @@ from pathlib import Path
 import cv2 as cv
 
 from .core import load_homography, stitch_pair
+from .high_resolution import compose_local_roi
 from .matchers import LineTRLineMatcher, OmniGluePointMatcher
 from .types import HomographyEstimationError
 from .visualization import (
@@ -26,6 +27,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("destination", type=Path, help="global/reference image")
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("--artifacts-dir", type=Path, help="metadata and match visualization")
+    parser.add_argument("--local-roi-output", type=Path, help="near-4K Local-area result path (default: next to --output)")
+    parser.add_argument("--local-roi-scale", type=int, default=6)
+    parser.add_argument("--local-roi-margin", type=int, default=24)
     parser.add_argument("--model-dir", type=Path, default=Path("models"))
     parser.add_argument("--omniglue-root", type=Path, default=Path("third_party/omniglue"))
     parser.add_argument("--linetr-root", type=Path, default=Path("third_party/LineTR"))
@@ -130,9 +134,35 @@ def main(argv=None) -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     if not cv.imwrite(str(args.output), result.panorama):
         raise SystemExit(f"error: could not write {args.output}")
+    local_roi_output = args.local_roi_output or args.output.parent / f"local_roi_x{args.local_roi_scale}.jpg"
+    local_roi_result = compose_local_roi(
+        source, destination, result.estimation.homography,
+        scale=args.local_roi_scale,
+        margin=args.local_roi_margin,
+        feather_width=args.feather_width,
+        feather_power=args.feather_power,
+        color_correction=not args.no_color_correction,
+        color_correction_coeff=args.color_correction_coeff,
+        color_correction_threshold=args.color_correction_threshold,
+    )
+    local_roi_output.parent.mkdir(parents=True, exist_ok=True)
+    if not cv.imwrite(str(local_roi_output), local_roi_result.image):
+        raise SystemExit(f"error: could not write {local_roi_output}")
+    background_output = local_roi_output.parent / f"global_roi_lanczos_x{args.local_roi_scale}.jpg"
+    if not cv.imwrite(str(background_output), local_roi_result.background):
+        raise SystemExit(f"error: could not write {background_output}")
     if args.artifacts_dir:
         args.artifacts_dir.mkdir(parents=True, exist_ok=True)
         metadata = _metadata(result, args)
+        metadata["local_roi_output"] = {
+            "path": str(local_roi_output),
+            "global_roi_xyxy": list(local_roi_result.global_roi_xyxy),
+            "scale": args.local_roi_scale,
+            "size": [local_roi_result.image.shape[1], local_roi_result.image.shape[0]],
+            "background": "Global Lanczos interpolation",
+            "background_path": str(background_output),
+            "color_correction": local_roi_result.color_correction,
+        }
         match_source = source
         match_region = None
         if initial_h is not None:

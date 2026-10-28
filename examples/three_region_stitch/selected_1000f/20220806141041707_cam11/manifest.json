@@ -1,0 +1,54 @@
+{
+  "scene": "20220806141041707",
+  "camera": "11",
+  "source_project": "image_stitching",
+  "source_video_frame_range_inclusive": [
+    5001,
+    6000
+  ],
+  "frame_count": 1000,
+  "video_fps": 25,
+  "local_scale_from_original": 1.0,
+  "global_display_crop_original_xyxy": [
+    416,
+    619,
+    1132,
+    1027
+  ],
+  "initial_projection_roi_original_xyxy": [
+    424,
+    630,
+    1082,
+    990
+  ],
+  "initial_projection_roi_sample_xyxy": [
+    8,
+    11,
+    666,
+    371
+  ],
+  "inputs": {
+    "local_frame": "input/local.jpg",
+    "global_frame": "input/global.jpg",
+    "initial_homography": "input/H_init.npz",
+    "local_initial_projection_roi_video": "input/local_init_roi.mp4",
+    "global_initial_projection_roi_video": "input/global_roi.mp4"
+  },
+  "cache": {
+    "reference_final_homography": "cache/H_final_reference.npz",
+    "local_motion_mask": "cache/local_motion_init_mask.png",
+    "global_motion_mask": "cache/global_motion_mask.png",
+    "raft_warped": "cache/raft_warped.jpg",
+    "raft_valid_mask": "cache/raft_valid_mask.png",
+    "raft_flow": "cache/raft_flow.npz"
+  },
+  "outputs": {
+    "pure_stitch": "output/pure_stitch.jpg",
+    "pure_diagnostics": "output/pure_artifacts/",
+    "three_region": "output/three_region/",
+    "benchmark": "output/benchmark/"
+  },
+  "note": "ROI videos are actual camera frames cropped into H_init coordinates; they are intended for independent motion-mask computation. Derived masks, homographies, and RAFT alignment data are stored in cache/.",
+  "selected_review_source": "selected_scene_camera_1000f_20261027/20220806141041707/cam11",
+  "selection_note": "Same frame indices as the review gallery; MP4 timestamp audit does not correct synchronization."
+}

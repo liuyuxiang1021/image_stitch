@@ -49,14 +49,22 @@ H_final = H_delta @ H_init
 
 | 文件 | 含义 |
 | --- | --- |
-| `output/panorama.jpg` | 用 `H_final` 投影、HHM 色差矫正并羽化融合后的最终图像 |
+| `output/panorama.jpg` | 原分辨率 Global 画布上的拼接诊断图 |
+| `output/local_roi_x6.jpg` | Local 投影附近的近 4K 拼接图；直接投影原始 Local |
+| `output/global_roi_lanczos_x6.jpg` | 与上一张同范围、经 Lanczos 放大 6 倍的 Global 背景 |
 | `output/initial_warp.jpg` | 只用 `H_init` 投影 local 的原始全尺寸结果；投影区域外为黑色 |
 | `output/initial_alignment.jpg` | 清晰版初值可视化：左侧在 global 中定位投影区域，右侧显示放大的 local/global 叠加细节 |
 | `output/final_alignment.jpg` | 清晰版最终可视化：左侧在完整 panorama 中定位最终覆盖区域，右侧放大真实的羽化融合结果 |
 | `output/point_line_matches.jpg` | 裁到投影 ROI 后的点线匹配可视化，展示尺寸不再受 global 全画布影响 |
 | `output/metadata.json` | 输入路径、初值和最终投影 ROI、`H_init`、`H_delta`、`H_final`、画布、匹配数量、RMSE、迭代次数及 HHM 采样统计 |
 
-这些样例中 local 的视野包含在 global 的部分区域内，因此输出是 global 坐标系下的 `3840 × 2160` 融合图，而不是左右并排、横向扩展的传统全景图。
+这些样例中 Local 的视野位于 Global 的一小块区域。`panorama.jpg` 保留原来的 3840 × 2160 Global 画布供定位；主要展示的 `local_roi_x6.jpg` 只输出 Local 投影附近的近 4K 区域，Global 背景插值放大，Local 仍使用原始像素投影。命令行运行时还会保存同范围的 `global_roi_lanczos_x6.jpg`。
+
+可用已保存的 `H_final` 重建近 4K 图，无需重新运行匹配模型：
+
+```bash
+python scripts/render_image_stitch_roi.py --example examples/image_stitch/20201024084037322_cam11
+```
 
 `initial_alignment.jpg` 左侧青色轮廓表示 local 经 `H_init` 投影后的实际边界，黄色矩形表示带 32 px 留白的可视化 ROI；右侧将这个 ROI 放大，并按照 local 55%、global 45% 叠加。右侧使用 2 px 青色虚线标记 local 的真实边界，以减少对对齐细节的遮挡。
 
@@ -84,6 +92,14 @@ H_final = H_delta @ H_init
 
 ![运动场点线匹配](../examples/image_stitch/20201024084037322_cam11/output/point_line_matches.jpg)
 
+#### Local 区域近 4K 拼接结果
+
+两图为同一 Local 投影区域，尺寸均为 4086 × 2388。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| ![运动场 Global 局部背景](../examples/image_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg) | ![运动场近 4K 拼接](../examples/image_stitch/20201024084037322_cam11/output/local_roi_x6.jpg) |
+
 ### 2. 室内展厅：`20210313151132256_cam22`
 
 不同相机视角下的室内展厅。最终保留 629/630 个点匹配和 119/121 个线匹配；点 RMSE 为 1.284 px，线 RMSE 为 1.118 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正为 21.29 px，最大修正为 32.62 px。
@@ -102,6 +118,14 @@ H_final = H_delta @ H_init
 
 ![展厅点线匹配](../examples/image_stitch/20210313151132256_cam22/output/point_line_matches.jpg)
 
+#### Local 区域近 4K 拼接结果
+
+两图为同一 Local 投影区域，尺寸均为 3858 × 2298。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| ![展厅 Global 局部背景](../examples/image_stitch/20210313151132256_cam22/output/global_roi_lanczos_x6.jpg) | ![展厅近 4K 拼接](../examples/image_stitch/20210313151132256_cam22/output/local_roi_x6.jpg) |
+
 ### 3. 校园道路：`20220817171240976_cam35`
 
 不同相机视角下的室外校园道路。最终保留 389/433 个点匹配和 79/79 个线匹配；点 RMSE 为 1.695 px，线 RMSE 为 1.400 px。相对于相机标定得到的 `H_init`，`H_final` 在 local 全图网格上的平均修正为 71.66 px，最大修正为 86.91 px。
@@ -119,6 +143,14 @@ H_final = H_delta @ H_init
 ![道路 final alignment](../examples/image_stitch/20220817171240976_cam35/output/final_alignment.jpg)
 
 ![道路点线匹配](../examples/image_stitch/20220817171240976_cam35/output/point_line_matches.jpg)
+
+#### Local 区域近 4K 拼接结果
+
+两图为同一 Local 投影区域，尺寸均为 4104 × 2388。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| ![道路 Global 局部背景](../examples/image_stitch/20220817171240976_cam35/output/global_roi_lanczos_x6.jpg) | ![道路近 4K 拼接](../examples/image_stitch/20220817171240976_cam35/output/local_roi_x6.jpg) |
 
 ## 安装
 
@@ -189,11 +221,14 @@ image-stitch source.jpg destination.jpg \
 --ransac-threshold 4.0          点 RANSAC 阈值（匹配尺度像素）
 --line-distance-threshold 12.0  线中点到目标直线阈值
 --line-angle-threshold 15.0     线方向差阈值（度）
---feather-width 6               local 边缘羽化宽度（输出像素），0 表示直接覆盖
+--feather-width 6               Local 边缘羽化宽度（原 Global 画布像素），0 表示直接覆盖
 --feather-power 1.0             羽化曲线指数
 --no-color-correction           关闭默认开启的 HHM 色差矫正
 --color-correction-coeff 1.0    HHM 映射系数，0 到 1
 --color-correction-threshold 0.05 HHM 稀疏直方图阈值
+--local-roi-output PATH         指定 Local 附近近 4K 拼接图的保存路径
+--local-roi-scale 6             局部输出倍率；Global 使用 Lanczos 插值
+--local-roi-margin 24           Local 投影外的 Global 留白（原画布像素）
 --device auto                   auto / cpu / cuda
 --gpu 0                         同时提供给 TensorFlow 与 PyTorch 的物理 GPU
 ```
@@ -207,6 +242,7 @@ import cv2 as cv
 from image_stitch import (
     LineTRLineMatcher,
     OmniGluePointMatcher,
+    compose_local_roi,
     load_homography,
     stitch_pair,
 )
@@ -230,6 +266,8 @@ result = stitch_pair(
 )
 
 cv.imwrite("panorama.jpg", result.panorama)
+roi = compose_local_roi(local, global_image, result.estimation.homography)
+cv.imwrite("local_roi_x6.jpg", roi.image)
 print(result.estimation.homography)
 ```
 

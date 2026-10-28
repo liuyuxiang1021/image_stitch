@@ -5,7 +5,7 @@
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
 | [`image_stitch`](docs/image_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场、展厅、校园道路各一组图像 |
-| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 商街、城市道路、运动场三个双视角 200 帧样例 |
+| [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 五组双视角样例，各含 1000 帧 ROI 视频 |
 | `video_background_removal` | 视频背景去除 | 后续加入 |
 
 ## 1. 纯点线单应性拼接
@@ -16,7 +16,7 @@
 
 1. 用 `H_init` 将 Local 投影到 Global，确定重叠区域；没有初值时直接从两张图像估计。
 2. 用 OmniGlue 匹配点、LineTR 匹配线，过滤不可靠的匹配后共同优化，得到 `H_final`。
-3. 用 HHM 校正 Local 与 Global 的颜色差异，再投影 Local，并在边缘 6 px 范围内羽化融合。
+3. 根据重叠区域校正 Local 颜色，将原始 Local 投到放大后的局部画布，并在边缘羽化（原画布半径 6 px）。Global 局部背景使用 Lanczos 插值放大 6 倍。
 
 下面展示运动场 `20201024084037322_cam11` 样例；另外两组场景的初值定位、点线匹配和最终输出见[纯拼接样例说明](docs/image_stitch.md)。
 
@@ -28,7 +28,11 @@
 
 ### 最终拼接结果
 
-![运动场纯点线单应性拼接结果](examples/image_stitch/20201024084037322_cam11/output/panorama.jpg)
+两图为 Local 投影附近的同一范围（4086 × 2388）。左图是插值放大的 Global 背景，右图是保留原始 Local 细节的拼接结果。
+
+| Global 局部背景 | 纯点线单应性拼接 |
+| --- | --- |
+| <img src="examples/image_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="examples/image_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接结果"> |
 
 ## 2. 运动感知三分区域拼接
 
@@ -40,7 +44,7 @@
 
 **输入与输出：**
 
-输入包括同步的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的视频片段。
+输入包括同帧序号的 Local/Global 图像、相机标定得到的初始单应矩阵 `H_init`，以及两路相机对应的视频片段。
 
 **方法：**
 
@@ -60,31 +64,31 @@ Local 和 Global 短视频生成的运动掩膜用于辅助划分融合区域，
    三个区域互不重叠，并覆盖整张 Global 画布。运动掩膜标记的是视频中随时间发生变化的位置，不是前景/背景语义标签。它帮助选择融合路径；树木、路灯杆等静止近景如果产生局部视差，会由 RAFT 区尝试对齐，RAFT 不可靠时则使用 Global 背景。
 5. **校正颜色并合成高分辨率结果**：Global 先放大 1.5 倍，再用 FSRCNN x4 生成 x6 背景。红、蓝两区共用一套 HHM 颜色校正；纯点线结果单独校正。最后将 Local 内容合入 x6 画布，并在区域边界羽化，半径为原画布 6 px。
 
-下面展示商街 `20220806141041707_cam11` 样例。Local/Global 输入、200 帧 ROI 视频、运动掩膜与 RAFT 缓存分别放在 `input/` 和 `cache/`；另外两组可运行样例见[三分区域样例说明](docs/three_region_stitch.md)。
+下面展示商街 `20220806141041707_cam11` 样例。输入、1000 帧 ROI 视频和算法缓存分别放在 `input/` 与 `cache/`；其余四组见[三分区域样例说明](docs/three_region_stitch.md)。
 
 ### 输入图像
 
+两图均取自 Frame 6000；Local 为 3840 × 2160 原始图，Global 为去畸变后的 716 × 408 裁剪图。
+
 | Local 输入 | Global 输入 |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local 输入"> | <img src="examples/three_region_stitch/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global 输入"> |
-
-两图均取自 Frame 6000；Local 为 3840 × 2160 原始图，Global 为去畸变后的 1070 × 786 裁剪图。
+| <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/input/local.jpg" width="480" alt="商街 Local 输入"> | <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/input/global.jpg" width="480" alt="商街 Global 输入"> |
 
 ### 区域归属与最终融合
 
-两图展示同一张 x6 Global 画布（6420 × 4716）：左图用颜色标出三区归属，右图是融合结果。
+两图展示同一张 x6 Global 画布（4296 × 2448）：左图用颜色标出三区归属，右图是融合结果。
 
 | 三区归属图 | x6 最终融合 |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="480" alt="商街三区归属图"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="480" alt="商街 x6 最终融合"> |
+| <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg" width="480" alt="商街三区归属图"> | <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg" width="480" alt="商街 x6 最终融合"> |
 
 ### Local 区域近 4K 拼接对照
 
+两图取自相同的 Local 投影区域，尺寸均为 4068 × 2358。
+
 | 纯点线单应性拼接 | 三分区域融合 |
 | --- | --- |
-| <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="480" alt="商街纯点线局部拼接"> | <img src="examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="480" alt="商街三分区域局部融合"> |
-
-两图取自相同的 Local 投影区域，尺寸均为 4080 × 2352。
+| <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="480" alt="商街纯点线局部拼接"> | <img src="examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="480" alt="商街三分区域局部融合"> |
 
 ## 快速运行
 
@@ -94,7 +98,7 @@ Python 3.10–3.12 环境下，安装并运行缓存样例：
 git clone --recursive https://github.com/liuyuxiang1021/image_stitch.git
 cd image_stitch
 python -m pip install -e .
-three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
+three-region-stitch --example examples/three_region_stitch/selected_1000f/20220806141041707_cam11
 ```
 
 默认读取 `cache/` 中的运动掩膜、单应性和 RAFT 结果，生成 x6 融合图（Lanczos ×1.5，再用 FSRCNN ×4）。输出位于样例的 `output/three_region/`：
@@ -108,12 +112,12 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 
 ## 同场景小规模评测
 
-对五组入选的场景/相机样例，使用对应帧和 `H_init` 比较纯 OmniGlue + LineTR 与三分区域融合。样例为 `20210112134325996/cam15`、`20220806141041707/cam11`、`20220806141041707/cam21`、`20220806141041707/cam31` 和 `20250704164617116/cam15`。评测区域为 Local 投影范围外扩 24 px 原画布留白后的完整区域，表中数值是五组样例的算术平均。
+对五组入选样例比较纯点线拼接与三分区域融合。评测区域是各组 Local 投影范围外扩 24 px 后的局部，参照为同一区域的 x6 Global 背景；表中是五组结果的算术平均，逐组结果见[评测数据](examples/three_region_stitch/selected_1000f/metrics.json)。
 
 | 指标 | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
 | :---: | :---: | :---: |
-| PSNR（dB） | 20.171 | **21.910** |
-| SSIM | 0.6720 | **0.7028** |
+| PSNR（dB） | 20.214 | **21.929** |
+| SSIM | 0.6723 | **0.7042** |
 
 ## 仓库结构
 
@@ -121,7 +125,7 @@ three-region-stitch --example examples/three_region_stitch/20220806141041707_cam
 src/image_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
 src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享 HHM 与三区合图
 examples/image_stitch/           # 三组静态图像输入与输出
-examples/three_region_stitch/    # 三组样例，各自分 input/、cache/、output/
+examples/three_region_stitch/    # 五组 1000 帧入选样例及三组旧版样例
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules
 scripts/                         # 模型准备、样例导出、评测

@@ -4,17 +4,17 @@
 
 ## 样例与文件组织
 
-仓库包含三个同步双视角场景：商街人群 `20220806141041707_cam11`、城市道路 `20210304162543165_cam11` 和运动场人群 `20220601174105159_cam11`。每组静帧对应 Frame 6000；每个视角另有第 5801–6000 帧、25 fps 的 200 帧真实视频片段。
+入选样例位于 [`selected_1000f/`](../examples/three_region_stitch/selected_1000f/)：`20210112134325996_cam15`、商街 `20220806141041707` 的 cam11、cam21、cam31，以及 `20250704164617116_cam15`。每组提供同帧序号的双视角静帧和各 1000 帧的 ROI 视频；静帧分别取自 Frame 6000 或 Frame 1349。视频保留原始帧序号，未额外校正相机时间戳。原有三组 200 帧样例仍保留在本目录下。
 
 每组样例统一分为原始输入、处理中间缓存和输出：
 
 | 目录 | 内容 |
 | --- | --- |
-| `input/` | 同步 Local/Global 静帧、标定初值 `H_init.npz`，以及两路 ROI 视频 |
+| `input/` | 同帧序号的 Local/Global 静帧、标定初值 `H_init.npz`，以及两路 ROI 视频 |
 | `cache/` | 点线精修矩阵、Local/Global 运动掩膜、RAFT 对齐图、有效性掩膜和光流场；缓存均可由输入视频与模型重新生成 |
-| `output/` | `pure_artifacts/` 保存纯点线结果与匹配可视化；`three_region/` 保存三区结果和中间可视化；`benchmark/` 保存近 4K 局部对照及 PSNR/SSIM |
+| `output/` | `pure_artifacts/` 保存纯点线矩阵信息；`three_region/` 保存三区结果及可视化 |
 
-`manifest.json` 分别列出 `inputs`、`cache` 和 `outputs` 的路径、源视频帧范围及 ROI 坐标。样例输入中，Local 是相机原始 3840 × 2160 图像，Global 是去畸变并裁剪后的 1070 × 786 图像；矩阵坐标对应这两张实际输入。
+每组 `manifest.json` 列出输入、缓存、输出路径和源视频帧范围。Local 为原始 3840 × 2160 图像；Global 已去畸变并按该组投影范围裁剪，因此各组尺寸不同。单应矩阵坐标对应本组输入图像。
 
 ## 算法流程
 
@@ -35,75 +35,38 @@ HHM 默认开启。可用 `--no-color-correction` 关闭，或用 `--color-corre
 
 ```bash
 python -m pip install -e .
-three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11
+three-region-stitch --example examples/three_region_stitch/selected_1000f/20220806141041707_cam11
 ```
 
-将样例路径替换为城市道路或运动场目录，可运行另外两个场景。缓存复现会重新计算三区归属、HHM 映射和 x6 融合。要重新生成某类缓存，可使用 `--motion-mode recompute`、`--geometry-mode recompute` 或 `--flow-mode raft`；从原视频到 RAFT 全部重算见下文。
+将样例路径替换为同目录下的另外四组，即可分别复现。缓存运行会重新计算三区归属、HHM 映射和 x6 融合。要重新生成某类缓存，可使用 `--motion-mode recompute`、`--geometry-mode recompute` 或 `--flow-mode raft`。
 
 从视频、点线匹配到 RAFT 全部重算需要准备模型：
 
 ```bash
 bash scripts/setup_models.sh
 bash scripts/setup_raft.sh
-three-region-stitch --example examples/three_region_stitch/20220806141041707_cam11 --recompute-all --gpu 0
+three-region-stitch --example examples/three_region_stitch/selected_1000f/20220806141041707_cam11 --recompute-all --gpu 0
 ```
 
 安装脚本优先直连下载；只有本机直连失败时才重试当前网络配置。RAFT 权重来自[官方 RAFT 仓库](https://github.com/princeton-vl/RAFT)，OmniGlue 和 LineTR 的准备见[纯拼接说明](image_stitch.md)。没有 NVIDIA GPU 时可设 `--device cpu`，推理耗时会增加。
 
-## 三个场景的输出
+## 五组入选样例的输出
 
-下方区域图用红、蓝、绿显示每个 x6 Global 画布中的像素归属；融合图展示相同画布上的最终结果。局部对照为纯点线单应性与三分区域结果，均使用独立估计的颜色映射和 6 px 原画布羽化，裁剪范围相同，为 Local 投影范围外加 24 px 留白。
+下图均裁自各组 Local 投影附近的同一 x6 Global 区域。区域图用红、蓝、绿标出单应性、RAFT 和 Global 保留区；纯点线与三分区域结果使用相同裁剪范围。每组的输入、缓存和完整画布输出可从样例目录查看。
 
-### 商街人群 · `20220806141041707_cam11`
+| 样例与输入 | 区域归属 | 纯点线拼接 | 三分区域融合 |
+| --- | --- | --- | --- |
+| [街景灯杆 · Frame 6000](../examples/three_region_stitch/selected_1000f/20210112134325996_cam15/manifest.json) | <img src="../examples/three_region_stitch/selected_1000f/20210112134325996_cam15/output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg" width="250" alt="街景灯杆区域归属"> | <img src="../examples/three_region_stitch/selected_1000f/20210112134325996_cam15/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="250" alt="街景灯杆纯点线拼接"> | <img src="../examples/three_region_stitch/selected_1000f/20210112134325996_cam15/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="250" alt="街景灯杆三分区域融合"> |
+| [商街人群 cam11 · Frame 6000](../examples/three_region_stitch/selected_1000f/20220806141041707_cam11/manifest.json) | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam11区域归属"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam11纯点线拼接"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam11三分区域融合"> |
+| [商街人群 cam21 · Frame 6000](../examples/three_region_stitch/selected_1000f/20220806141041707_cam21/manifest.json) | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam21/output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam21区域归属"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam21/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam21纯点线拼接"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam21/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam21三分区域融合"> |
+| [商街人群 cam31 · Frame 6000](../examples/three_region_stitch/selected_1000f/20220806141041707_cam31/manifest.json) | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam31/output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam31区域归属"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam31/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam31纯点线拼接"> | <img src="../examples/three_region_stitch/selected_1000f/20220806141041707_cam31/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="250" alt="商街人群 cam31三分区域融合"> |
+| [共享单车道路 · Frame 1349](../examples/three_region_stitch/selected_1000f/20250704164617116_cam15/manifest.json) | <img src="../examples/three_region_stitch/selected_1000f/20250704164617116_cam15/output/three_region/region_overlay_local_roi_fsrcnn_x6.jpg" width="250" alt="共享单车道路区域归属"> | <img src="../examples/three_region_stitch/selected_1000f/20250704164617116_cam15/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg" width="250" alt="共享单车道路纯点线拼接"> | <img src="../examples/three_region_stitch/selected_1000f/20250704164617116_cam15/output/three_region/final_result_local_roi_fsrcnn_x6.jpg" width="250" alt="共享单车道路三分区域融合"> |
 
-| 三区归属图 | x6 最终融合 |
-| --- | --- |
-| ![商街三区归属图](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg) | ![商街 x6 融合结果](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
-
-| 纯点线单应性 | 运动感知三分区域 |
-| --- | --- |
-| ![商街纯点线局部 x6](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg) | ![商街三分区域局部 x6](../examples/three_region_stitch/20220806141041707_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg) |
-
-### 城市道路 · `20210304162543165_cam11`
-
-| 三区归属图 | x6 最终融合 |
-| --- | --- |
-| ![道路三区归属图](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg) | ![道路 x6 融合结果](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
-
-| 纯点线单应性 | 运动感知三分区域 |
-| --- | --- |
-| ![道路纯点线局部 x6](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg) | ![道路三分区域局部 x6](../examples/three_region_stitch/20210304162543165_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg) |
-
-### 运动场人群 · `20220601174105159_cam11`
-
-| 三区归属图 | x6 最终融合 |
-| --- | --- |
-| ![运动场三区归属图](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/region_overlay_on_global_fsrcnn_x6.jpg) | ![运动场 x6 融合结果](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_global_fsrcnn_x6.jpg) |
-
-| 纯点线单应性 | 运动感知三分区域 |
-| --- | --- |
-| ![运动场纯点线局部 x6](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/pure_stitch_local_roi_fsrcnn_x6.jpg) | ![运动场三分区域局部 x6](../examples/three_region_stitch/20220601174105159_cam11/output/three_region/final_result_local_roi_fsrcnn_x6.jpg) |
-
-`output/three_region/` 还包含原画布诊断图、单应性投影、运动掩膜可视化、各区域二值掩膜和 `summary.json`。完整 Global x6 画布、Local 附近近 4K 裁剪、纯点线对照分别保存在 `final_result_global_fsrcnn_x6.jpg`、`final_result_local_roi_fsrcnn_x6.jpg` 和 `pure_stitch_local_roi_fsrcnn_x6.jpg`。
+每组 `output/three_region/` 还保存完整 x6 Global 画布、Local 附近约 4K 的结果和 `summary.json`。原有三组 200 帧样例作为旧版数据保留。
 
 ## 小规模全 ROI 评测
 
-全 ROI 是 Local 投影范围外加 24 px 原画布留白后的区域；每种拼接结果都与同一 x6 Global 背景比较。它不是带有真值的拼接质量分数，绿区由 Global 保留的像素与参照相同，会影响得分。
-
-| 场景 | SIFT PSNR（dB） | 纯点线 PSNR（dB） | 三分区域 PSNR（dB） | SIFT SSIM | 纯点线 SSIM | 三分区域 SSIM |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 商街人群 | 16.778 | 16.641 | **18.128** | 0.5604 | 0.5602 | **0.6076** |
-| 城市道路 | **20.497** | 18.627 | 20.579 | **0.6607** | 0.6234 | **0.6788** |
-| 运动场人群 | 16.727 | 16.766 | **17.791** | 0.5651 | 0.5613 | **0.7276** |
-
-运行评测：
-
-```bash
-python -m pip install -e '.[benchmark]'
-python scripts/evaluate_three_region.py --example examples/three_region_stitch/20220806141041707_cam11
-```
-
-`metrics.json` 保存 ROI 坐标、像素数、各方法 PSNR/SSIM 和评测口径。这里展示的数值是缓存样例对应的评测结果；重新计算缓存后可按上述命令更新。
+五组样例分别在 Local 投影范围外扩 24 px 的区域内，与同范围的 x6 Global 背景比较，再对 PSNR、SSIM 取算术平均。逐组结果和尺寸见[评测数据](../examples/three_region_stitch/selected_1000f/metrics.json)。这组数值衡量输出与 Global 的相似程度，不代表有真值的拼接质量。
 
 ## 数据来源
 

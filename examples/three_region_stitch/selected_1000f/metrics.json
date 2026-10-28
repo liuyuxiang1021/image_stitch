@@ -1,0 +1,95 @@
+{
+  "reference": "x6 Global background, same Local ROI, JPEG outputs",
+  "samples": [
+    {
+      "sample": "20210112134325996_cam15",
+      "roi_size": [
+        4080,
+        2364
+      ],
+      "frame_count": 1000,
+      "pure": {
+        "psnr_db": 26.48,
+        "ssim": 0.8806
+      },
+      "three_region": {
+        "psnr_db": 27.062,
+        "ssim": 0.8873
+      }
+    },
+    {
+      "sample": "20220806141041707_cam11",
+      "roi_size": [
+        4068,
+        2358
+      ],
+      "frame_count": 1000,
+      "pure": {
+        "psnr_db": 16.541,
+        "ssim": 0.5486
+      },
+      "three_region": {
+        "psnr_db": 18.028,
+        "ssim": 0.5981
+      }
+    },
+    {
+      "sample": "20220806141041707_cam21",
+      "roi_size": [
+        4050,
+        2376
+      ],
+      "frame_count": 1000,
+      "pure": {
+        "psnr_db": 21.026,
+        "ssim": 0.6531
+      },
+      "three_region": {
+        "psnr_db": 21.596,
+        "ssim": 0.6768
+      }
+    },
+    {
+      "sample": "20220806141041707_cam31",
+      "roi_size": [
+        4032,
+        2352
+      ],
+      "frame_count": 1000,
+      "pure": {
+        "psnr_db": 15.162,
+        "ssim": 0.6198
+      },
+      "three_region": {
+        "psnr_db": 20.389,
+        "ssim": 0.6777
+      }
+    },
+    {
+      "sample": "20250704164617116_cam15",
+      "roi_size": [
+        4092,
+        2400
+      ],
+      "frame_count": 1000,
+      "pure": {
+        "psnr_db": 21.863,
+        "ssim": 0.6593
+      },
+      "three_region": {
+        "psnr_db": 22.571,
+        "ssim": 0.6811
+      }
+    }
+  ],
+  "mean": {
+    "pure": {
+      "psnr_db": 20.214,
+      "ssim": 0.6723
+    },
+    "three_region": {
+      "psnr_db": 21.929,
+      "ssim": 0.7042
+    }
+  }
+}

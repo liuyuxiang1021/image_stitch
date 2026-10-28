@@ -124,6 +124,12 @@ def main() -> None:
         for frame_index in range(args.start_frame, final_frame + 1):
             local_ok, local_raw = local_video.read()
             global_ok, global_raw = global_video.read()
+            if not local_ok:
+                local_video.set(cv.CAP_PROP_POS_FRAMES, frame_index)
+                local_ok, local_raw = local_video.read()
+            if not global_ok:
+                global_video.set(cv.CAP_PROP_POS_FRAMES, frame_index)
+                global_ok, global_raw = global_video.read()
             if not local_ok or not global_ok:
                 raise RuntimeError(f"Could not decode both videos at frame {frame_index}")
             if local_raw.shape[:2] != (2160, 3840) or global_raw.shape[:2] != (2160, 3840):

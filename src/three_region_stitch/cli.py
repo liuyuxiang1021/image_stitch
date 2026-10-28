@@ -10,7 +10,7 @@ from pathlib import Path
 import cv2 as cv
 import numpy as np
 
-from image_stitch import load_homography
+from image_stitch import load_homography, projected_local_roi
 
 from .flow import RAFTFlow, align_static_region
 from .geometry import estimate_motion_homography
@@ -70,23 +70,7 @@ def _local_roi_xyxy(
     global_shape: tuple[int, ...],
     margin: int = 24,
 ) -> tuple[int, int, int, int]:
-    height, width = local_shape[:2]
-    canvas_height, canvas_width = global_shape[:2]
-    corners = np.array(
-        [[[0.0, 0.0]], [[width - 1.0, 0.0]],
-         [[width - 1.0, height - 1.0]], [[0.0, height - 1.0]]],
-        dtype=np.float64,
-    )
-    projected = cv.perspectiveTransform(
-        corners, np.asarray(homography, dtype=np.float64),
-    ).reshape(-1, 2)
-    x0 = max(0, int(np.floor(projected[:, 0].min())) - margin)
-    y0 = max(0, int(np.floor(projected[:, 1].min())) - margin)
-    x1 = min(canvas_width, int(np.ceil(projected[:, 0].max())) + margin + 1)
-    y1 = min(canvas_height, int(np.ceil(projected[:, 1].max())) + margin + 1)
-    if x0 >= x1 or y0 >= y1:
-        raise ValueError("The projected Local image does not overlap the Global canvas")
-    return x0, y0, x1, y1
+    return projected_local_roi(local_shape, homography, global_shape, margin)
 
 
 def _crop_scaled(image: np.ndarray, roi_xyxy: tuple[int, int, int, int], scale: int) -> np.ndarray:
