@@ -1,0 +1,22 @@
+{
+  "input_video": "examples/video_background_removal/20220806141041707_cam100/input/video.mp4",
+  "frame_size": [
+    160,
+    120
+  ],
+  "frames_used": 1000,
+  "start_frame": 0,
+  "frame_step": 1,
+  "patch_size": 4,
+  "stride": 3,
+  "gmm_components": 10,
+  "static_overlap_rmse_threshold": 4.0,
+  "patch_count": 2120,
+  "fallback_patches": 0,
+  "static_mask_fraction": 0.986094,
+  "background": "background_model_gmm.png",
+  "static_mask": "static_region_mask.png",
+  "overlay": "final_result.png",
+  "masked_background": "final_result_masked.png",
+  "patch_models": "patch_models.npz"
+}

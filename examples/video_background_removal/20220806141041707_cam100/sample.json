@@ -1,0 +1,13 @@
+{
+  "scene": "20220806141041707",
+  "camera": "100",
+  "description": "商街人群，Global 相机中央局部",
+  "source_video_in_repository": "examples/three_region_stitch/selected_1000f/20220806141041707_cam11/input/global_roi.mp4",
+  "source_video_frame_range_zero_based": [0, 999],
+  "source_original_global_frame_range_zero_based": [5001, 6000],
+  "source_video_crop_xywh": [220, 130, 160, 120],
+  "input_video": "input/video.mp4",
+  "input_preview_frame": "input/frame_6000.jpg",
+  "output_background": "output/background_model_gmm.png",
+  "output_static_mask": "output/static_region_mask.png"
+}

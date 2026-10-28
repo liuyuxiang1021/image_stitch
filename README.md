@@ -1,12 +1,12 @@
 # image_stitch
 
-来自原工程 `image_stitching` 的跨视角图像拼接项目。仓库按算法分为三块；目前前两块有代码、真实输入和可复现输出，视频背景去除留待后续整理。
+来自原工程 `image_stitching` 和 `MotionMask` 的图像处理项目，按算法分为三块。每块都有代码、真实输入和可复现输出。
 
 | 模块 | 用途 | 可运行样例 |
 | --- | --- | --- |
 | [`point_line_stitch`](docs/point_line_stitch.md) | OmniGlue 点匹配 + LineTR 线匹配，估计/精修单应性、HHM 色差矫正并羽化拼接 | 运动场两组、展厅、校园道路、商街各一组图像 |
 | [`three_region_stitch`](docs/three_region_stitch.md) | 双视角视频运动掩膜 + 点线运动区单应性 + RAFT 静态区 + Global 背景合图 | 五组双视角样例，各含 1000 帧 ROI 视频 |
-| `video_background_removal` | 视频背景去除 | 后续加入 |
+| [`video_background_removal`](docs/video_background_removal.md) | 从固定机位视频提取灰度静态背景与静态区域掩码 | 商街 Global 相机 1000 帧局部视频 |
 
 双视角样例以 Global 帧为基准搜索对应的 Local 帧；逐帧评分和选择结果见[帧配对说明](docs/frame_synchronization.md)。
 
@@ -112,6 +112,14 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 | PSNR（dB） | 20.469 | 20.626 | **23.043** |
 | SSIM | 0.6767 | 0.6834 | **0.7172** |
 
+## 3. 视频静态背景提取
+
+输入固定机位视频。将重叠的 4 × 4 灰度图像块在时间上拟合 10 分量 GMM，每块取权重最大分量的均值重建背景；相邻块的重叠误差用于生成静态区域掩码。样例视频包含商街 Global 相机的 1000 帧、160 × 120 中央局部；4 个并行任务在本机处理全部 1000 帧耗时 88.54 秒。完整输入、输出、运行命令和其他帧数耗时见[视频背景提取说明](docs/video_background_removal.md)。
+
+| 输入视频末帧 | 提取的静态背景 | 静态区域掩码 |
+| --- | --- | --- |
+| <img src="examples/video_background_removal/20220806141041707_cam100/input/frame_6000.jpg" width="300" alt="商街 Global 视频末帧"> | <img src="examples/video_background_removal/20220806141041707_cam100/output/background_model_gmm.png" width="300" alt="商街灰度静态背景"> | <img src="examples/video_background_removal/20220806141041707_cam100/output/static_region_mask.png" width="300" alt="商街静态区域掩码"> |
+
 ## 快速运行
 
 Python 3.10–3.12 环境下，安装并运行缓存样例：
@@ -137,11 +145,13 @@ three-region-stitch --example examples/three_region_stitch/selected_1000f/202208
 ```text
 src/point_line_stitch/                # 纯点线单应性、HHM 色差矫正与羽化融合
 src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享 HHM 与三区合图
+src/video_background_removal/    # 时序图像块 GMM 静态背景提取
 examples/point_line_stitch/           # 五组静态图像输入与输出
 examples/three_region_stitch/    # 五组 1000 帧入选样例及三组旧版样例
+examples/video_background_removal/     # 1000 帧局部视频及背景结果
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules
 scripts/                         # 模型准备、样例导出、评测
 ```
 
-`video_background_removal` 目前没有实现或样例，后续再加入。LineTR 的许可证限制为学术或非营利机构的非商业研究用途，使用前请阅读 [`third_party/LineTR/LICENSE`](third_party/LineTR/LICENSE)。
+LineTR 的许可证限制为学术或非营利机构的非商业研究用途，使用前请阅读 [`third_party/LineTR/LICENSE`](third_party/LineTR/LICENSE)。

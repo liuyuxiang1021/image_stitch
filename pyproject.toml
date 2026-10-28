@@ -24,11 +24,13 @@ full = [
 ]
 dev = ["pytest>=7"]
 benchmark = ["scikit-image>=0.20"]
+background = ["scikit-learn>=1.3"]
 
 [project.scripts]
 point-line-stitch = "point_line_stitch.cli:main"
 image-stitch = "point_line_stitch.cli:main"
 three-region-stitch = "three_region_stitch.cli:main"
+video-background-removal = "video_background_removal.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
