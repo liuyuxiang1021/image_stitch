@@ -105,7 +105,7 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 
 ### 五组三分区域样例评测
 
-对五组入选样例比较 SIFT + OpenCV RANSAC、纯点线拼接与三分区域融合。SIFT 基线使用 `cv.findHomography` 求 H；纯点线方法先用 OpenCV RANSAC 求点匹配初值，再用本项目的点线联合优化精修 H。三者使用相同的 x6 Global 背景、HHM 校色和羽化。评测区域是各组 Local 投影范围外扩 24 px 后的局部，参照为同一区域的 x6 Global 背景；表中是五组结果的算术平均，逐组结果见[三分区域评测数据](examples/three_region_stitch/selected_1000f/metrics.json)。
+对五组入选样例比较 SIFT + OpenCV RANSAC、纯点线拼接与三分区域融合。三者先用标定矩阵 `H_init` 定位重叠区域。SIFT 基线用 SIFT 点匹配和 OpenCV RANSAC 估计增量单应性；点线方法优先用 OmniGlue 点匹配的 RANSAC 估计增量初值，失败时改用 LineTR 线匹配求初值，再用点线联合优化得到最终矩阵。三者使用相同的 x6 Global 背景、HHM 校色和羽化。评测区域是各组 Local 投影范围外扩 24 px 后的局部，参照为同一区域的 x6 Global 背景；表中是五组结果的算术平均，逐组结果见[三分区域评测数据](examples/three_region_stitch/selected_1000f/metrics.json)。
 
 | 指标 | SIFT + OpenCV RANSAC | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
 | :---: | :---: | :---: | :---: |

@@ -21,7 +21,7 @@
 
 1. 使用可选的标定初值 `H_init` 将 Local 投影到 Global，限定后续匹配区域；未提供初值时，在两张输入图像上直接估计单应性。
 2. 在有效重叠区分别进行 OmniGlue 点匹配和 LineTR 线匹配，并按置信度、几何距离与方向过滤不可靠匹配。
-3. 由点匹配建立稳健初值，再联合优化点重投影误差与线采样距离，得到 `H_final`；有初值时满足 `H_final = H_delta @ H_init`。
+3. 优先用 OmniGlue 点匹配的 RANSAC 建立单应性初值；若点初值失败且线匹配足够，则改用线匹配建立初值。随后联合优化点重投影误差与线采样距离，得到 `H_final`；使用标定初值时满足 `H_final = H_delta @ H_init`。
 4. 根据 Local/Global 有效重叠像素估计一套 HHM 映射，应用于 Local；将 Local 投影到 Global 画布，仅在投影边缘 6 px 范围内羽化融合。
 
 以下五组真实视角均包含 Local/Global 输入、初值定位、点线匹配可视化和最终结果。双视角帧号与搜索结果见[帧配对说明](frame_synchronization.md)。点线图每组最多展示 40 个点、12 条线，以便辨认；单应性估计仍使用全部过滤后的匹配。
@@ -236,7 +236,7 @@ Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条
 
 ## 五组纯点线样例评测
 
-五组样例分别比较 SIFT + OpenCV RANSAC 与 OmniGlue + LineTR 点线拼接。两者从相同 `H_init` 和输入图像出发；SIFT 基线用 `cv.findHomography(RANSAC)` 求 H，点线方法用 OpenCV RANSAC 求点匹配初值后，再用本项目的 8 自由度点线联合优化精修 H。两者在相同 Local ROI 上使用 Lanczos x6 Global 背景、HHM 校色和 6 px 原画布羽化，再与该 Global ROI 比较。
+五组样例分别比较 SIFT + OpenCV RANSAC 与 OmniGlue + LineTR 点线拼接。两者从相同的标定矩阵 `H_init` 和输入图像出发；SIFT 基线用 SIFT 点匹配的 `cv.findHomography(RANSAC)` 估计增量单应性。点线方法优先用 OmniGlue 点匹配的 RANSAC 求增量初值，失败时用 LineTR 线匹配求后备初值，再以本项目的 8 自由度点线联合优化精修；最终矩阵为 `H_final = H_delta @ H_init`。两者在相同 Local ROI 上使用 Lanczos x6 Global 背景、HHM 校色和 6 px 原画布羽化，再与该 Global ROI 比较。
 
 | 指标（五组均值） | SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线拼接 |
 | :---: | :---: | :---: |
