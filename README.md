@@ -58,6 +58,8 @@ Frame 6000 · ROI 4032 × 2352。
 | --- | --- |
 | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="480" alt="cam22 SIFT 50:50 对照"> | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="480" alt="cam22 点线 50:50 对照"> |
 
+以上两组中，SIFT 和点线方法都得到单应矩阵，可以直接观察同一 ROI 的结果。另有输入出现 SIFT RANSAC 无法估计有效单应矩阵的情况，例如 `20260109122648396/cam34`。该例的点线结果也不够准确，因此这里只记录 SIFT 的失败状态，不展示该例拼接图，也不将其作为点线效果更好的证据。
+
 ## 2. 运动感知三分区域拼接
 
 ### 算法流程
