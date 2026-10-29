@@ -1,0 +1,66 @@
+{
+  "scene": "20220806141041707",
+  "camera": "100",
+  "description": "Full-resolution Global video background comparison on the same 1000 sampled frames.",
+  "input_video": "/mnt/16T/lyx/image_stitching/input/videos/20220806141041707/main/100.mp4",
+  "input_video_in_repository": false,
+  "frame_size": [
+    3840,
+    2160
+  ],
+  "sampled_frames_zero_based": {
+    "start": 4001,
+    "step": 2,
+    "count": 1000,
+    "last": 5999
+  },
+  "gmm_components": 10,
+  "covariance_type": "diag",
+  "static_overlap_rmse_threshold": 4.0,
+  "jobs": 12,
+  "hardware": "Intel Core i9-10900X CPU @ 3.70GHz",
+  "python": "3.10.19",
+  "scikit_learn": "1.7.2",
+  "runs": [
+    {
+      "name": "4x4",
+      "patch_size": 4,
+      "stride": 3,
+      "components": 10,
+      "patch_count": 921600,
+      "frames_used": 1000,
+      "start_frame_zero_based": 4001,
+      "frame_step": 2,
+      "last_frame_zero_based": 5999,
+      "jobs": 12,
+      "elapsed_seconds": 5203.99,
+      "peak_rss_kib": 15063380,
+      "peak_rss_gib": 14.37,
+      "static_mask_fraction": 0.982924,
+      "fallback_patches": 0,
+      "background": "background_4x4_stride3_1000f.png",
+      "static_mask": "static_mask_4x4_stride3_1000f.png"
+    },
+    {
+      "name": "10x10",
+      "patch_size": 10,
+      "stride": 8,
+      "components": 10,
+      "patch_count": 129600,
+      "frames_used": 1000,
+      "start_frame_zero_based": 4001,
+      "frame_step": 2,
+      "last_frame_zero_based": 5999,
+      "jobs": 12,
+      "elapsed_seconds": 1472.56,
+      "peak_rss_kib": 13320596,
+      "peak_rss_gib": 12.7,
+      "static_mask_fraction": 0.990578,
+      "fallback_patches": 0,
+      "background": "background_10x10_stride8_1000f.png",
+      "static_mask": "static_mask_10x10_stride8_1000f.png"
+    }
+  ],
+  "visual_note": "Both backgrounds retain moving-person traces. The 10x10/stride-8 output is faster but shows coarser patch artifacts near people; 4x4/stride-3 retains finer local structure. Static-mask coverage is not a background-quality score.",
+  "detail_comparison": "pedestrian_detail_comparison.jpg"
+}

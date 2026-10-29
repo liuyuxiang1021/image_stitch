@@ -133,6 +133,8 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 | --- | --- | --- |
 | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_frame_5997.jpg" width="300" alt="商街原始 4K Global 帧"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/background_model_gmm.png" width="300" alt="商街 4K GMM 背景估计"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_region_mask.png" width="300" alt="商街 4K 静态连通掩码"> |
 
+同一原始视频的 1000 帧全幅参数对比中，4 × 4、步长 3 用时 5204 秒；10 × 10、步长 8 用时 1473 秒，约快 3.5 倍。较大的块在行人附近更容易出现块状残影；两种设置都没有完全去除动态目标。完整结果、掩码和运行参数见[视频背景提取说明](docs/video_background_removal.md)。
+
 ## 快速运行
 
 Python 3.10–3.12 环境下，安装并运行缓存样例：

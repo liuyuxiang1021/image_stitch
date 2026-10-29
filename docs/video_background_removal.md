@@ -62,4 +62,39 @@ video-background-removal /path/to/20220806141041707/main/100.mp4 \
 
 原始 4K Global 的 500 帧、每隔 4 帧取样实验使用相同的 4 个并行任务，实测 **7398.03 秒（约 2 小时 03 分）**，临时图像块文件约 6.9 GiB。两组耗时都包含视频解码、GMM 拟合和写出，不能直接按像素数推算其他帧数的耗时。
 
-小样例前 100 帧仍留有明显残影。同一全片隔帧采样所得背景与其 1000 帧版本的 SSIM 为 0.9818，只表示两张算法输出相近，不是背景真值评分。增大图像块并同步增大步长可以减少待拟合块数，但也会改变背景细节和连通掩码；相关参数对比仍在进行。
+小样例前 100 帧仍留有明显残影。同一全片隔帧采样所得背景与其 1000 帧版本的 SSIM 为 0.9818，只表示两张算法输出相近，不是背景真值评分。
+
+## 原始 4K 全幅参数对比
+
+使用商街 Global 原视频的同一段 1000 帧，比较两种图像块设置。两组都处理原始 3840 × 2160 画面，从零起始帧索引 4001 开始每隔 2 帧取 1 帧，到 5999 为止；均使用 10 个对角协方差高斯分量和 12 个并行任务。测试环境为 Intel Core i9-10900X、Python 3.10.19、scikit-learn 1.7.2。
+
+| 图像块 / 步长 | 图像块数 | 耗时 | 峰值内存 | 背景观察 |
+| --- | ---: | ---: | ---: | --- |
+| 4 × 4 / 3 | 921,600 | 5,203.99 秒（约 1 小时 27 分） | 14.37 GiB | 局部细节较细，仍有行人残影 |
+| 10 × 10 / 8 | 129,600 | 1,472.56 秒（约 24 分 33 秒） | 12.70 GiB | 约快 3.5 倍，行人附近的残影更块状 |
+
+下图放大同一处店铺前的行人区域，左为 4 × 4，右为 10 × 10。两种设置都保留了动态目标残影；较大的图像块减少了计算量，也使局部残影更粗。辅助掩码覆盖率分别为 98.29% 和 99.06%，该数值描述的是图像块之间的连通范围，不表示背景提取质量。
+
+<img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/pedestrian_detail_comparison.jpg" width="900" alt="商街行人区域的 GMM 图像块参数对比：左为 4×4，右为 10×10">
+
+两种设置的完整背景图与掩码可分别查看：
+
+| 4 × 4 / 步长 3 | 10 × 10 / 步长 8 |
+| --- | --- |
+| 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_4x4_stride3_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_4x4_stride3_1000f.png) | 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_10x10_stride8_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_10x10_stride8_1000f.png) |
+
+可用以下命令复现；将 `/path/to/100.mp4` 替换成原始 Global 视频路径。该约 880 MB 的原视频未纳入仓库。
+
+```bash
+video-background-removal /path/to/100.mp4 \
+  --output-dir /path/to/output_4x4 \
+  --start-frame 4001 --frame-step 2 --max-frames 1000 \
+  --patch-size 4 --stride 3 --components 10 --jobs 12
+
+video-background-removal /path/to/100.mp4 \
+  --output-dir /path/to/output_10x10 \
+  --start-frame 4001 --frame-step 2 --max-frames 1000 \
+  --patch-size 10 --stride 8 --components 10 --jobs 12
+```
+
+精确配置、输出文件名和计时记录见[参数对比清单](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/manifest.json)。
