@@ -114,11 +114,13 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 
 ## 3. 视频静态背景提取
 
-输入固定机位视频。将重叠的 4 × 4 灰度图像块在时间上拟合 10 分量 GMM，每块取权重最大分量的均值重建背景；相邻块的重叠误差用于生成静态区域掩码。样例视频包含商街 Global 相机的 1000 帧、160 × 120 中央局部；4 个并行任务在本机处理全部 1000 帧耗时 88.54 秒。完整输入、输出、运行命令和其他帧数耗时见[视频背景提取说明](docs/video_background_removal.md)。
+输入固定机位视频，对每个重叠的灰度图像块拟合时序 GMM，取权重最大分量的均值并平均重叠块，生成背景图。相邻块按重叠误差连通得到辅助掩码；掩码不参与背景估计，也不是行人检测结果。完整流程和运行方式见[视频背景提取说明](docs/video_background_removal.md)。
 
-| 输入视频末帧 | 提取的静态背景 | 静态区域掩码 |
+下面是一组原始 3840 × 2160 商街 Global 数据。左图是参与采样的 Frame 5997；从 Frame 4001 起每隔 4 帧取 1 帧，共使用 500 帧。中图是 GMM 背景估计，仍有局部行人残影；右图是辅助连通掩码。4 个并行任务实测耗时约 2 小时 03 分。仓库另附可直接运行的 160 × 120、1000 帧局部视频，见详细说明。
+
+| 原始 Global 输入帧 | GMM 背景估计 | 辅助静态连通掩码 |
 | --- | --- | --- |
-| <img src="examples/video_background_removal/20220806141041707_cam100/input/frame_6000.jpg" width="300" alt="商街 Global 视频末帧"> | <img src="examples/video_background_removal/20220806141041707_cam100/output/background_model_gmm.png" width="300" alt="商街灰度静态背景"> | <img src="examples/video_background_removal/20220806141041707_cam100/output/static_region_mask.png" width="300" alt="商街静态区域掩码"> |
+| <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_frame_5997.jpg" width="300" alt="商街原始 4K Global 帧"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/background_model_gmm.png" width="300" alt="商街 4K GMM 背景估计"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_region_mask.png" width="300" alt="商街 4K 静态连通掩码"> |
 
 ## 快速运行
 
@@ -148,7 +150,7 @@ src/three_region_stitch/         # 双运动掩膜、运动区 H、RAFT、共享
 src/video_background_removal/    # 时序图像块 GMM 静态背景提取
 examples/point_line_stitch/           # 五组静态图像输入与输出
 examples/three_region_stitch/    # 五组 1000 帧入选样例及三组旧版样例
-examples/video_background_removal/     # 1000 帧局部视频及背景结果
+examples/video_background_removal/     # 可运行局部视频和原始 4K Global 结果
 docs/                            # 算法、数据、评测及运行细节
 third_party/                     # 官方 OmniGlue、LineTR、RAFT Git submodules
 scripts/                         # 模型准备、样例导出、评测

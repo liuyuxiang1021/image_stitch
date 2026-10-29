@@ -1,0 +1,25 @@
+{
+  "scene": "20220806141041707",
+  "camera": "100",
+  "source_video": "20220806141041707/main/100.mp4",
+  "source_video_included": false,
+  "frame_size": [3840, 2160],
+  "sampled_frame_indices_zero_based": {
+    "start": 4001,
+    "step": 4,
+    "count": 500,
+    "last": 5997
+  },
+  "input_frame": "input/global_frame_5997.jpg",
+  "background": "output/background_model_gmm.png",
+  "static_mask": "output/static_region_mask.png",
+  "patch_size": 4,
+  "stride": 3,
+  "gmm_components": 10,
+  "static_overlap_rmse_threshold": 4.0,
+  "patch_count": 921600,
+  "jobs": 4,
+  "elapsed_seconds": 7398.03,
+  "static_mask_fraction": 0.984691,
+  "fallback_patches": 0
+}
