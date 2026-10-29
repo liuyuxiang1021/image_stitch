@@ -21,7 +21,9 @@
 | --- | --- | --- |
 | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_frame_5997.jpg" width="300" alt="商街原始 4K Global 帧"> | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/background_model_gmm.png" width="300" alt="商街 4K GMM 背景，局部仍有行人残影"> | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_region_mask.png" width="300" alt="商街 4K 静态连通掩码"> |
 
-这次全幅运行得到 921,600 个图像块，掩码覆盖 98.47% 的像素，但背景图在商店门前和远处行人密集处仍有明显残影。这说明连通掩码不能当作去人的质量分数。仓库保存上述输入帧和输出图供查看；约 880 MB 的原视频未纳入仓库，因此这组全幅结果不能只靠这些静帧重新计算。
+这次全幅运行得到 921,600 个图像块，掩码覆盖 98.47% 的像素，但背景图在商店门前和远处行人密集处仍有明显残影。这说明连通掩码不能当作去人的质量分数。原始 3840 × 2160 Global 视频已随样例纳入仓库，使用 Git LFS 存储，路径为 [`input/global_video.mp4`](../examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4)。
+
+首页提供了[视频与掩码叠加的 GIF 预览](../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_preview.gif)和[完整 80 秒演示视频](../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_4001_6000_960x540.mp4)。演示将基于上述 500 帧估计出的固定静态连通掩码叠加到原视频连续 2000 帧；绿色为掩码保留区域，红色为掩码未覆盖区域。它展示的是掩码位置随原视频播放的效果，不是逐帧运动检测或背景替换结果。
 
 ## 可运行的小视频样例
 
@@ -39,10 +41,10 @@ video-background-removal \
 
 默认处理输入视频的全部帧。可用 `--start-frame`、`--max-frames`、`--frame-step` 控制取帧，用 `--patch-size`、`--stride`、`--components` 和 `--static-threshold` 调整算法。大视频可通过 `--work-dir` 指定有足够空间的临时数据目录。短片段中行人可能长期遮挡背景，导致残影；样例使用 1000 帧而非短片段。
 
-若已有原始 4K 视频，可用下面的参数复现上面的全幅结果；`--output-dir` 请指向有足够空间的位置。原视频的具体来源及帧号见样例清单。
+下载原始视频后，可用下面的参数复现上面的全幅结果；`--output-dir` 请指向有足够空间的位置。原视频的具体来源及帧号见样例清单。
 
 ```bash
-video-background-removal /path/to/20220806141041707/main/100.mp4 \
+video-background-removal examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4 \
   --output-dir /path/to/output \
   --start-frame 4001 --frame-step 4 --max-frames 500 \
   --patch-size 4 --stride 3 --components 10 --jobs 4 \
@@ -83,10 +85,10 @@ video-background-removal /path/to/20220806141041707/main/100.mp4 \
 | --- | --- |
 | 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_4x4_stride3_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_4x4_stride3_1000f.png) | 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_10x10_stride8_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_10x10_stride8_1000f.png) |
 
-可用以下命令复现；将 `/path/to/100.mp4` 替换成原始 Global 视频路径。该约 880 MB 的原视频未纳入仓库。
+可用以下命令复现；输入路径指向仓库内通过 Git LFS 管理的原始 Global 视频。
 
 ```bash
-video-background-removal /path/to/100.mp4 \
+video-background-removal examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4 \
   --output-dir /path/to/output_4x4 \
   --start-frame 4001 --frame-step 2 --max-frames 1000 \
   --patch-size 4 --stride 3 --components 10 --jobs 12

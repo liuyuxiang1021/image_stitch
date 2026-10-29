@@ -133,6 +133,18 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 | --- | --- | --- |
 | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_frame_5997.jpg" width="300" alt="商街原始 4K Global 帧"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/background_model_gmm.png" width="300" alt="商街 4K GMM 背景估计"> | <img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_region_mask.png" width="300" alt="商街 4K 静态连通掩码"> |
 
+原始 4K Global 视频（3840 × 2160，约 922 MB）也随样例提供，通过 Git LFS 存储。仓库同时包含 160 × 120、1000 帧的可运行小样例。
+
+### 视频与掩码叠加演示
+
+下方 GIF 是完整演示视频的短预览。演示将从 500 帧 GMM 结果得到的固定静态连通掩码叠加到原视频连续 2000 帧上：绿色表示掩码保留区域，红色表示掩码未覆盖区域。该掩码用于背景块连通性检查，不是逐帧运动掩码，也不是背景替换后的视频。
+
+<img src="examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_preview.gif" width="720" alt="商街原视频与静态连通掩码叠加预览">
+
+[播放完整 80 秒叠加视频（MP4）](examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_4001_6000_960x540.mp4) · [获取原始 4K Global 视频（Git LFS）](examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4)
+
+原始视频由 Git LFS 管理。若只运行缓存样例，可用 `GIT_LFS_SKIP_SMUDGE=1` 克隆以跳过大文件；需要视频时，在仓库目录执行 `git lfs pull --include="examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4"`。
+
 同一原始视频的 1000 帧全幅参数对比中，4 × 4、步长 3 用时 5204 秒；10 × 10、步长 8 用时 1473 秒，约快 3.5 倍。较大的块在行人附近更容易出现块状残影；两种设置都没有完全去除动态目标。完整结果、掩码和运行参数见[视频背景提取说明](docs/video_background_removal.md)。
 
 ## 快速运行

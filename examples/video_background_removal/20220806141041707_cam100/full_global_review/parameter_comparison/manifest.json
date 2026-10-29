@@ -2,8 +2,8 @@
   "scene": "20220806141041707",
   "camera": "100",
   "description": "Full-resolution Global video background comparison on the same 1000 sampled frames.",
-  "input_video": "/mnt/16T/lyx/image_stitching/input/videos/20220806141041707/main/100.mp4",
-  "input_video_in_repository": false,
+  "input_video": "../input/global_video.mp4",
+  "input_video_in_repository": true,
   "frame_size": [
     3840,
     2160
