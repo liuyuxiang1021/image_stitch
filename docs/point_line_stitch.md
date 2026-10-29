@@ -254,10 +254,6 @@ Frame 6000 · ROI 4032 × 2352。
 | --- | --- |
 | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="480" alt="cam22 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="480" alt="cam22 点线 50:50 对照"> |
 
-在 `20260109122648396/cam34` 案例中，SIFT RANSAC 未能估计有效单应矩阵，因此没有对应 SIFT 拼接图或成对画质分数。下图只展示点线结果，说明这类失败案例的处理状态。
-
-<img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam34/point_line_50.jpg" width="720" alt="SIFT RANSAC 失败案例中的点线 50:50 结果">
-
 ## 安装
 
 项目支持 Python 3.10–3.12。OmniGlue 模型约 400 MB，首次安装需要下载。
