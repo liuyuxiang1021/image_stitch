@@ -238,23 +238,12 @@ Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条
 
 以下为 Frame 6000 的同一 Local ROI，以 Local/Global 50:50 原始叠加显示；未做 HHM 色差校正或羽化，便于观察几何对齐。这里展示代表性画面，不给出综合性能分数。
 
-### 运动场 · `20201025083303988/cam34`
+| 方法 | 运动场 · `20201025083303988/cam34`<br>Frame 6000 · ROI 4008 × 2388 | `20260109122648396/cam22`<br>Frame 6000 · ROI 4032 × 2352 |
+| --- | --- | --- |
+| SIFT + OpenCV RANSAC | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="360" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="360" alt="cam22 SIFT 50:50 对照"> |
+| OmniGlue + LineTR 点线 | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="360" alt="运动场 cam34 点线 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="360" alt="cam22 点线 50:50 对照"> |
 
-Frame 6000 · ROI 4008 × 2388。
-
-| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
-| --- | --- |
-| <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="480" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="480" alt="运动场 cam34 点线 50:50 对照"> |
-
-### 场景 `20260109122648396/cam22`
-
-Frame 6000 · ROI 4032 × 2352。
-
-| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
-| --- | --- |
-| <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="480" alt="cam22 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="480" alt="cam22 点线 50:50 对照"> |
-
-以上两组中，SIFT 和点线方法都得到单应矩阵，可以直接观察同一 ROI 的结果。另有输入出现 SIFT RANSAC 无法估计有效单应矩阵的情况，例如 `20260109122648396/cam34`。该例的点线结果也不够准确，因此这里只记录 SIFT 的失败状态，不展示该例拼接图，也不将其作为点线效果更好的证据。
+以上两组中，SIFT 和点线方法都得到单应矩阵，可以直接观察同一 ROI 的结果。另有输入出现 SIFT RANSAC 无法估计有效单应矩阵的情况，例如 `20260109122648396/cam34`。该例的点线结果也不够准确，因此这里只说明 SIFT 的失败状态，不展示拼接图，也不将其作为点线效果更好的证据。
 
 ## 安装
 
