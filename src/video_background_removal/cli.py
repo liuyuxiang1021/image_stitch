@@ -19,7 +19,10 @@ def main() -> None:
     parser.add_argument("--patch-size", type=int, default=4)
     parser.add_argument("--stride", type=int, default=3)
     parser.add_argument("--components", type=int, default=10)
-    parser.add_argument("--static-threshold", type=float, default=4.0)
+    parser.add_argument(
+        "--static-threshold", type=float, default=3.0,
+        help="maximum patch-overlap RMSE for the static connectivity mask; does not change the GMM background",
+    )
     parser.add_argument("--start-frame", type=int, default=0)
     parser.add_argument("--max-frames", type=int)
     parser.add_argument("--frame-step", type=int, default=1)

@@ -9,10 +9,16 @@
   "source_video_duration_seconds": 359.931,
   "mask_overlay_video": "output/static_mask_on_full_video_4001_6000_960x540.mp4",
   "mask_overlay_preview": "output/static_mask_on_full_video_preview.gif",
-  "mask_overlay_frame_labels_inclusive": [4001, 6000],
+  "mask_overlay_frame_labels_inclusive": [
+    4001,
+    6000
+  ],
   "mask_overlay_frames": 2000,
-  "mask_overlay_description": "Fixed static connectivity mask estimated from the 500-frame GMM result, overlaid on the original video; green is retained by the mask and red is excluded.",
-  "frame_size": [3840, 2160],
+  "mask_overlay_description": "Fixed static connectivity mask estimated from the 500-frame GMM result at RMSE threshold 3.0, overlaid on the original video; green is retained by the mask and red is excluded.",
+  "frame_size": [
+    3840,
+    2160
+  ],
   "sampled_frame_indices_zero_based": {
     "start": 4001,
     "step": 4,
@@ -25,10 +31,10 @@
   "patch_size": 4,
   "stride": 3,
   "gmm_components": 10,
-  "static_overlap_rmse_threshold": 4.0,
+  "static_overlap_rmse_threshold": 3.0,
   "patch_count": 921600,
   "jobs": 4,
   "elapsed_seconds": 7398.03,
-  "static_mask_fraction": 0.984691,
+  "static_mask_fraction": 0.893967,
   "fallback_patches": 0
 }

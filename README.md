@@ -38,14 +38,29 @@
 | --- | --- |
 | <img src="examples/point_line_stitch/20201024084037322_cam11/output/global_roi_lanczos_x6.jpg" width="480" alt="运动场 Global 局部背景"> | <img src="examples/point_line_stitch/20201024084037322_cam11/output/local_roi_x6.jpg" width="480" alt="运动场近 4K 拼接结果"> |
 
-### 五组纯点线样例评测
+### SIFT + RANSAC 定性对照
 
-这五组以单个单应性拼接。SIFT + OpenCV RANSAC 基线与 OmniGlue + LineTR 点线方法使用相同的 `H_init`、Local ROI、Lanczos x6 Global 背景、HHM 校色和 6 px 边缘羽化。两种结果与同一 Global ROI 比较；表中为五组均值，逐组数据见[纯点线评测数据](examples/point_line_stitch/metrics.json)。
+以下均为 Frame 6000 的同一 Local ROI，以 Local/Global 50:50 原始叠加显示；未做色差校正或羽化，便于观察几何对齐。这里只展示代表性画面，不给出综合性能分数。
 
-| 指标 | SIFT + OpenCV RANSAC | 纯点线（OmniGlue + LineTR） |
-| :---: | :---: | :---: |
-| PSNR（dB） | 22.754 | 22.734 |
-| SSIM | 0.6510 | 0.6515 |
+#### 运动场 · `20201025083303988/cam34`
+
+Frame 6000 · ROI 4008 × 2388。
+
+| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
+| --- | --- |
+| <img src="examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="480" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="480" alt="运动场 cam34 点线 50:50 对照"> |
+
+#### 场景 `20260109122648396/cam22`
+
+Frame 6000 · ROI 4032 × 2352。
+
+| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
+| --- | --- |
+| <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="480" alt="cam22 SIFT 50:50 对照"> | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="480" alt="cam22 点线 50:50 对照"> |
+
+另有 SIFT 未能估计出有效单应矩阵的案例：`20260109122648396/cam34` 中 RANSAC 失败，因此没有对应的 SIFT 拼接图或成对画质分数。下图只展示点线结果，作为失败案例说明。
+
+<img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam34/point_line_50.jpg" width="720" alt="SIFT RANSAC 失败案例中的点线 50:50 结果">
 
 ## 2. 运动感知三分区域拼接
 
@@ -121,7 +136,7 @@ Global 取 Frame 6000，Local 配对到 Frame 5997；Local 为 3840 × 2160 原�
 1. 将视频帧转为灰度图，按默认 4 × 4、步长 3 划分重叠图像块。
 2. 对每个位置的图像块拟合 10 分量时序 GMM，取权重最大分量的均值作为该位置的背景块。
 3. 对重叠背景块取平均，重建整张背景图。
-4. 从图像中心开始，按相邻背景块的重叠误差生成辅助连通掩码。掩码不参与背景估计，也不表示行人位置。
+4. 从图像中心开始，按相邻背景块的重叠误差生成辅助连通掩码，默认 RMSE 阈值为 3.0。掩码不参与背景估计，也不表示行人位置。
 
 参数、运行命令和掩码的具体计算方式见[视频背景提取说明](docs/video_background_removal.md)。
 

@@ -16,7 +16,7 @@
   },
   "gmm_components": 10,
   "covariance_type": "diag",
-  "static_overlap_rmse_threshold": 4.0,
+  "static_overlap_rmse_threshold": 3.0,
   "jobs": 12,
   "hardware": "Intel Core i9-10900X CPU @ 3.70GHz",
   "python": "3.10.19",
@@ -36,7 +36,7 @@
       "elapsed_seconds": 5203.99,
       "peak_rss_kib": 15063380,
       "peak_rss_gib": 14.37,
-      "static_mask_fraction": 0.982924,
+      "static_mask_fraction": 0.899343,
       "fallback_patches": 0,
       "background": "background_4x4_stride3_1000f.png",
       "static_mask": "static_mask_4x4_stride3_1000f.png"
@@ -55,7 +55,7 @@
       "elapsed_seconds": 1472.56,
       "peak_rss_kib": 13320596,
       "peak_rss_gib": 12.7,
-      "static_mask_fraction": 0.990578,
+      "static_mask_fraction": 0.972926,
       "fallback_patches": 0,
       "background": "background_10x10_stride8_1000f.png",
       "static_mask": "static_mask_10x10_stride8_1000f.png"

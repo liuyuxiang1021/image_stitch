@@ -234,16 +234,29 @@ Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条
 | --- | --- |
 | <img src="../examples/point_line_stitch/20220806141041707_cam32/output/global_roi_lanczos_x6.jpg" width="480" alt="商街 cam32 Global 局部背景"> | <img src="../examples/point_line_stitch/20220806141041707_cam32/output/local_roi_x6.jpg" width="480" alt="商街 cam32 近 4K 拼接"> |
 
-## 五组纯点线样例评测
+## SIFT + RANSAC 定性对照
 
-五组样例分别比较 SIFT + OpenCV RANSAC 与 OmniGlue + LineTR 点线拼接。两者从相同的标定矩阵 `H_init` 和输入图像出发；SIFT 基线用 SIFT 点匹配的 `cv.findHomography(RANSAC)` 估计增量单应性。点线方法优先用 OmniGlue 点匹配的 RANSAC 求增量初值，失败时用 LineTR 线匹配求后备初值，再以本项目的 8 自由度点线联合优化精修；最终矩阵为 `H_final = H_delta @ H_init`。两者在相同 Local ROI 上使用 Lanczos x6 Global 背景、HHM 校色和 6 px 原画布羽化，再与该 Global ROI 比较。
+以下为 Frame 6000 的同一 Local ROI，以 Local/Global 50:50 原始叠加显示；未做 HHM 色差校正或羽化，便于观察几何对齐。这里展示代表性画面，不给出综合性能分数。
 
-| 指标（五组均值） | SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线拼接 |
-| :---: | :---: | :---: |
-| PSNR（dB） | 22.754 | 22.734 |
-| SSIM | 0.6510 | 0.6515 |
+### 运动场 · `20201025083303988/cam34`
 
-逐组数值见[评测数据](../examples/point_line_stitch/metrics.json)。这两项平均分非常接近，不能据此声称点线方法全面优于 SIFT；两列同时改变了匹配器和 H 精修方式，也不能单独量化各部分的贡献。可运行 `python scripts/evaluate_point_line.py --example examples/point_line_stitch/20201024084037322_cam11` 复算单组，再运行 `python scripts/aggregate_point_line_metrics.py` 汇总五组。
+Frame 6000 · ROI 4008 × 2388。
+
+| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
+| --- | --- |
+| <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="480" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="480" alt="运动场 cam34 点线 50:50 对照"> |
+
+### 场景 `20260109122648396/cam22`
+
+Frame 6000 · ROI 4032 × 2352。
+
+| SIFT + OpenCV RANSAC | OmniGlue + LineTR 点线 |
+| --- | --- |
+| <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="480" alt="cam22 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="480" alt="cam22 点线 50:50 对照"> |
+
+在 `20260109122648396/cam34` 案例中，SIFT RANSAC 未能估计有效单应矩阵，因此没有对应 SIFT 拼接图或成对画质分数。下图只展示点线结果，说明这类失败案例的处理状态。
+
+<img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam34/point_line_50.jpg" width="720" alt="SIFT RANSAC 失败案例中的点线 50:50 结果">
 
 ## 安装
 

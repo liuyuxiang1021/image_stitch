@@ -135,7 +135,7 @@ def fit_background(
     patch_size: int = 4,
     stride: int = 3,
     components: int = 10,
-    static_threshold: float = 4.0,
+    static_threshold: float = 3.0,
     start_frame: int = 0,
     max_frames: int | None = None,
     frame_step: int = 1,

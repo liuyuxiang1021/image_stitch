@@ -9,7 +9,7 @@
 1. **建立时序图像块。** 将每帧转为灰度，默认按 4 × 4、步长 3 划分重叠图像块。同一空间位置在不同帧的图像块组成 16 维时序样本。边缘额外补块，确保像素都被覆盖。
 2. **估计背景块。** 对每个位置独立拟合 10 分量、对角协方差的 GMM，取**混合权重最大**的分量均值作为背景块；拟合失败才回退到时间均值。这里不是逐像素拟合，也不是逐像素取峰。
 3. **重建背景图。** 同一像素可能属于多个背景块，将它们的预测值平均，得到 `background_model_gmm.png`。
-4. **生成辅助掩码。** 从图像中心的背景块开始，检查上下左右相邻块的重叠像素；其均方根误差（RMSE）小于默认阈值 4 时，将相邻块加入连通区域。把连通块覆盖的像素写入 `static_region_mask.png`。4 × 4、步长 3 时，相邻块只有 1 px 宽的重叠带。
+4. **生成辅助掩码。** 从图像中心的背景块开始，检查上下左右相邻块的重叠像素；其均方根误差（RMSE）小于默认阈值 3.0 时，将相邻块加入连通区域。把连通块覆盖的像素写入 `static_region_mask.png`。4 × 4、步长 3 时，相邻块只有 1 px 宽的重叠带。
 
 第 4 步**不参与第 2、3 步的背景估计**。掩码描述的是背景块之间能否通过重叠误差连通，不是行人检测或可靠的运动掩膜。即使掩码覆盖率很高，背景图仍可能有人影残留；裁剪还会改变中心起点与边缘图像块，因此裁剪掩码和全图掩码也不一定相同。
 
@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_frame_5997.jpg" width="300" alt="商街原始 4K Global 帧"> | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/background_model_gmm.png" width="300" alt="商街 4K GMM 背景，局部仍有行人残影"> | <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_region_mask.png" width="300" alt="商街 4K 静态连通掩码"> |
 
-这次全幅运行得到 921,600 个图像块，掩码覆盖 98.47% 的像素，但背景图在商店门前和远处行人密集处仍有明显残影。这说明连通掩码不能当作去人的质量分数。原始 3840 × 2160 Global 视频已随样例纳入仓库，使用 Git LFS 存储，路径为 [`input/global_video.mp4`](../examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4)。
+这次全幅运行得到 921,600 个图像块；使用默认 RMSE 阈值 3.0 后，连通掩码覆盖 89.40% 的像素。背景图在商店门前和远处行人密集处仍有残影；调整这个阈值只改变辅助掩膜，不会改变 GMM 背景估计。原始 3840 × 2160 Global 视频已随样例纳入仓库，使用 Git LFS 存储，路径为 [`input/global_video.mp4`](../examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4)。
 
 首页提供了[视频与掩码叠加的 GIF 预览](../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_preview.gif)和[完整 80 秒演示视频](../examples/video_background_removal/20220806141041707_cam100/full_global_review/output/static_mask_on_full_video_4001_6000_960x540.mp4)。演示将基于上述 500 帧估计出的固定静态连通掩码叠加到原视频连续 2000 帧；绿色为掩码保留区域，红色为掩码未覆盖区域。它展示的是掩码位置随原视频播放的效果，不是逐帧运动检测或背景替换结果。
 
@@ -75,7 +75,7 @@ video-background-removal examples/video_background_removal/20220806141041707_cam
 | 4 × 4 / 3 | 921,600 | 5,203.99 秒（约 1 小时 27 分） | 14.37 GiB | 局部细节较细，仍有行人残影 |
 | 10 × 10 / 8 | 129,600 | 1,472.56 秒（约 24 分 33 秒） | 12.70 GiB | 约快 3.5 倍，行人附近的残影更块状 |
 
-下图放大同一处店铺前的行人区域，左为 4 × 4，右为 10 × 10。两种设置都保留了动态目标残影；较大的图像块减少了计算量，也使局部残影更粗。辅助掩码覆盖率分别为 98.29% 和 99.06%，该数值描述的是图像块之间的连通范围，不表示背景提取质量。
+下图放大同一处店铺前的行人区域，左为 4 × 4，右为 10 × 10。两种设置都保留了动态目标残影；较大的图像块减少了计算量，也使局部残影更粗。默认阈值 3.0 下，辅助掩码覆盖率分别为 89.93% 和 97.29%；该数值描述的是图像块之间的连通范围，不表示背景提取质量。
 
 <img src="../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/pedestrian_detail_comparison.jpg" width="900" alt="商街行人区域的 GMM 图像块参数对比：左为 4×4，右为 10×10">
 
@@ -85,7 +85,7 @@ video-background-removal examples/video_background_removal/20220806141041707_cam
 | --- | --- |
 | 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_4x4_stride3_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_4x4_stride3_1000f.png) | 背景：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/background_10x10_stride8_1000f.png) · 掩码：[PNG](../examples/video_background_removal/20220806141041707_cam100/full_global_review/parameter_comparison/static_mask_10x10_stride8_1000f.png) |
 
-可用以下命令复现；输入路径指向仓库内通过 Git LFS 管理的原始 Global 视频。
+可用以下命令复现；输入路径指向仓库内通过 Git LFS 管理的原始 Global 视频。`--static-threshold` 只调节辅助连通掩膜，不参与 GMM 背景估计。
 
 ```bash
 video-background-removal examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4 \
