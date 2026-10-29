@@ -240,7 +240,7 @@ Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条
 
 | 方法 | 运动场 · `20201025083303988/cam34`<br>Frame 6000 · ROI 4008 × 2388 | `20260109122648396/cam22`<br>Frame 6000 · ROI 4032 × 2352 | 运动场人群 · `20220601174105159/cam31`<br>Frame 6000 · 点 19 / 线 20 · SIFT 内点 7 · ROI 10218 × 7470 |
 | --- | --- | --- | --- |
-| SIFT + OpenCV RANSAC | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="320" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="320" alt="cam22 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20220601174105159_cam31/sift_50.jpg" width="320" alt="运动场人群 cam31 SIFT 50:50 对照"> |
+| SIFT + OpenCV RANSAC | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="320" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="320" alt="cam22 SIFT 50:50 对照"> | ❌ 无可用拼接结果 |
 | OmniGlue + LineTR 点线 | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="320" alt="运动场 cam34 点线 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="320" alt="cam22 点线 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20220601174105159_cam31/point_line_50.jpg" width="320" alt="运动场人群 cam31 点线 50:50 对照"> |
 
 第三组中，SIFT 虽得到 7 个 RANSAC 内点，但投影明显拉伸；点线匹配筛选后保留 19 点、20 线。三组均使用 Frame 6000 的 Local/Global 同一 ROI 做 50:50 原始叠加，未做色差校正或羽化，仅作定性对照。匹配信息见各样例目录中的 `metadata.json`。

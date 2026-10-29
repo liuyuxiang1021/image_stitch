@@ -12,7 +12,7 @@
 
 ## 1. 纯点线单应性拼接
 
-输入 Local、Global 图像和可选的标定初值 `H_init`。算法用 `H_init` 定位重叠区域，再通过 OmniGlue 点匹配与 LineTR 线匹配联合精修单应性。随后按重叠区域校正颜色并羽化融合；输出包含原分辨率结果和 Local 附近的高分辨率结果。
+输入 Local、Global 图像和可选的标定初值 `H_init`。提供初值时，先用它定位重叠区域，再通过 OmniGlue 点匹配与 LineTR 线匹配联合精修单应性；没有初值时，直接估计单应性。随后按重叠区域校正颜色并羽化融合；输出包含原分辨率结果和 Local 附近的高分辨率结果。
 
 下方展示 `20201024084037322/cam11` 样例，其余四组见[纯拼接样例说明](docs/point_line_stitch.md)。
 
@@ -32,7 +32,7 @@
 
 | 方法 | `20201025083303988/cam34` | `20260109122648396/cam22` | `20220601174105159/cam31` |
 | --- | --- | --- | --- |
-| SIFT + OpenCV RANSAC | <img src="examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="320" alt="cam34 SIFT 结果"> | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="320" alt="cam22 SIFT 结果"> | ❌ 无拼接结果 |
+| SIFT + OpenCV RANSAC | <img src="examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="320" alt="cam34 SIFT 结果"> | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="320" alt="cam22 SIFT 结果"> | ❌ 无可用拼接结果 |
 | OmniGlue + LineTR 点线 | <img src="examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="320" alt="cam34 点线结果"> | <img src="examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="320" alt="cam22 点线结果"> | <img src="examples/point_line_stitch/qualitative_comparison/20220601174105159_cam31/point_line_50.jpg" width="320" alt="cam31 点线结果"> |
 
 ## 2. 运动感知三分区域拼接
@@ -40,10 +40,10 @@
 该方法用于缓解不同景深结构的跨视角视差。Local 和 Global 视频生成的运动掩膜及 Local 投影有效性共同决定像素来源：
 
 - **红色：** 两侧运动掩膜在 Global 坐标中的交集，且 Local 投影有效；使用点线精修后的单应性结果。
-- **蓝色：** 其他 Local 有效区域中通过 RAFT 前后向一致性检查的部分；使用 RAFT 对齐结果。
+- **蓝色：** 其他 Local 有效区域中通过 RAFT 前后向一致性检查及碎片清理的部分；使用 RAFT 对齐结果。
 - **绿色：** 其余区域；保留 Global 背景。
 
-红、蓝区域共用一套 HHM 色彩校正；Global 背景放大为 x6，区域边界做羽化。
+默认对红、蓝区域共用一套 HHM 色彩校正，将 Global 背景放大为 x6，并在区域边界羽化。
 
 下方展示 `20220806141041707/cam11` 样例，其余四组见[三分区域样例说明](docs/three_region_stitch.md)。
 
@@ -63,7 +63,7 @@
 
 ### 五组样例评测
 
-表中为五组样例的等权平均。评测指标比较融合结果与同区域的 x6 Global 背景，表示相似程度；逐组数据见[评测结果](examples/three_region_stitch/selected_1000f/metrics.json)。
+表中为五组样例的等权平均。评测指标比较三种拼接结果与同区域的 x6 Global 背景，表示相似程度；逐组数据见[评测结果](examples/three_region_stitch/selected_1000f/metrics.json)。
 
 | 指标 | SIFT + OpenCV RANSAC | 纯点线（OmniGlue + LineTR） | 三分区域融合 |
 | :---: | :---: | :---: | :---: |

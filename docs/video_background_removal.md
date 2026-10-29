@@ -93,7 +93,7 @@ video-background-removal examples/video_background_removal/20220806141041707_cam
   --start-frame 4001 --frame-step 2 --max-frames 1000 \
   --patch-size 4 --stride 3 --components 10 --jobs 12
 
-video-background-removal /path/to/100.mp4 \
+video-background-removal examples/video_background_removal/20220806141041707_cam100/full_global_review/input/global_video.mp4 \
   --output-dir /path/to/output_10x10 \
   --start-frame 4001 --frame-step 2 --max-frames 1000 \
   --patch-size 10 --stride 8 --components 10 --jobs 12
