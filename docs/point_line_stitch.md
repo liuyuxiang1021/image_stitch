@@ -243,7 +243,14 @@ Global/Local 均为 Frame 6000。点线匹配精修后保留 517 个点、67 条
 | SIFT + OpenCV RANSAC | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/sift_50.jpg" width="360" alt="运动场 cam34 SIFT 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/sift_50.jpg" width="360" alt="cam22 SIFT 50:50 对照"> |
 | OmniGlue + LineTR 点线 | <img src="../examples/point_line_stitch/qualitative_comparison/20201025083303988_cam34/point_line_50.jpg" width="360" alt="运动场 cam34 点线 50:50 对照"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam22/point_line_50.jpg" width="360" alt="cam22 点线 50:50 对照"> |
 
-以上两组中，SIFT 和点线方法都得到单应矩阵，可以直接观察同一 ROI 的结果。另有输入出现 SIFT RANSAC 无法估计有效单应矩阵的情况，例如 `20260109122648396/cam34`。该例的点线结果也不够准确，因此这里只说明 SIFT 的失败状态，不展示拼接图，也不将其作为点线效果更好的证据。
+另有两组 SIFT 未能估计出有效单应矩阵、点线结果在局部结构上较清楚的样例。两组均固定 Global Frame 6000；Local 帧号单独列出。图像为相同 ROI 的 Local/Global 50:50 原始叠加，未做色差校正或羽化。这里只作定性展示。
+
+| 方法 | 运动场草地与跑道 · `20260109121210949/cam31`<br>Global 6000 / Local 6008 · ROI 4278 × 2484 | 运动场铺装区 · `20260109122648396/cam31`<br>Global 6000 / Local 6011 · ROI 4278 × 2484 |
+| --- | --- | --- |
+| SIFT + OpenCV RANSAC | 失败：仅 3 组 ratio-test 匹配，少于估计单应矩阵所需的 4 组 | 失败：6 组匹配经 RANSAC 后为 0 个内点 |
+| OmniGlue + LineTR 点线 | <img src="../examples/point_line_stitch/qualitative_comparison/20260109121210949_cam31/point_line_50.jpg" width="360" alt="运动场 cam31 草地与跑道点线拼接"> | <img src="../examples/point_line_stitch/qualitative_comparison/20260109122648396_cam31/point_line_50.jpg" width="360" alt="运动场 cam31 铺装区点线拼接"> |
+
+两组点线匹配经过筛选后分别保留 11 点 / 22 线、6 点 / 8 线。Local 与 Global 使用表中相同帧对进行两种方法的匹配；完整帧号、ROI 和匹配信息见各样例目录中的 `metadata.json`。
 
 ## 安装
 
