@@ -1,0 +1,67 @@
+{
+  "status": "complete",
+  "scene": "20220601174105159",
+  "camera": "31",
+  "global_frame": 6000,
+  "local_frame": 6000,
+  "roi_native_xyxy": [
+    0,
+    618,
+    1703,
+    1863
+  ],
+  "roi_x6_size": [
+    10218,
+    7470
+  ],
+  "point_line_status": "matched",
+  "point_line_diagnostics": {
+    "points_before_filter": 30,
+    "points_after_filter": 19,
+    "lines_before_filter": 39,
+    "lines_after_filter": 20,
+    "iterations": 6,
+    "point_rmse": 1.8327245712280273,
+    "line_rmse": 1.2715246677398682
+  },
+  "point_line_valid_fraction": 0.1022,
+  "sift_status": "matched",
+  "sift_matches": 10,
+  "sift_inliers": 7,
+  "sift_valid_fraction": 0.0857,
+  "H_point_line": [
+    [
+      0.17684872333833615,
+      -0.014704598998553978,
+      465.3988168775228
+    ],
+    [
+      0.01574312484913447,
+      0.14076284681769183,
+      1262.5106111200478
+    ],
+    [
+      1.2019088260541706e-05,
+      -1.3412685353189696e-05,
+      1.004413415837227
+    ]
+  ],
+  "H_sift": [
+    [
+      -0.3646576188602998,
+      -0.5589492744439177,
+      610.3334602341009
+    ],
+    [
+      -0.9296597419414685,
+      -1.4225353616732974,
+      1567.149300917128
+    ],
+    [
+      -0.0005739827200426978,
+      -0.0008776121065798597,
+      0.9634608201005666
+    ]
+  ],
+  "rendering": "Global native ROI enlarged by Lanczos x6; raw Local warp; hard valid mask; no HHM or feathering"
+}
